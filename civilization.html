@@ -7,131 +7,95 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    background:#020510; overflow:hidden;
+    background:#020510; color:#c8d0e0;
     font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+    min-height:100vh; overflow:hidden;
     touch-action:manipulation; user-select:none; -webkit-user-select:none;
-    width:100vw; height:100vh; height:100dvh;
   }
-  canvas { display:block; }
+  canvas { display:block; width:100vw; height:100vh; }
 
-  /* UI 层 */
-  .ui {
-    position:fixed; top:0; left:0; width:100%; height:100%;
-    pointer-events:none; z-index:10;
-  }
+  .ui { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
   .ui > * { pointer-events:auto; }
 
-  /* 顶部栏 */
-  .top-bar {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:10px 14px;
-  }
-  .era-badge {
-    background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.15);
-    border-radius:20px; padding:6px 16px;
-    font-size:0.75rem; color:#aab; letter-spacing:1px;
-  }
-  .turn-badge {
-    background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.15);
-    border-radius:20px; padding:6px 14px;
-    font-size:0.75rem; color:#aab;
-  }
+  .top-bar { display:flex; justify-content:space-between; padding:10px 14px; }
+  .badge { background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:6px 14px; font-size:0.72rem; color:#aab; }
 
-  /* 底部资源栏 */
-  .res-bar {
+  .side-panel {
+    position:fixed; right:0; top:0; bottom:0; width:260px;
+    background:rgba(10,14,24,0.95); border-left:1px solid rgba(255,255,255,0.08);
+    backdrop-filter:blur(20px);
+    transform:translateX(100%); transition:transform 0.35s ease;
+    overflow-y:auto; padding:16px;
+  }
+  .side-panel.show { transform:translateX(0); }
+  .side-panel::-webkit-scrollbar { width:3px; }
+  .side-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); }
+
+  .sp-title { font-size:0.9rem; font-weight:700; color:#e0e8f0; margin-bottom:14px; letter-spacing:1px; }
+  .sp-section { margin-bottom:18px; }
+  .sp-label { font-size:0.68rem; color:#5a6a80; margin-bottom:6px; display:flex; justify-content:space-between; }
+  .sp-label .val { color:#aab; font-weight:600; }
+  .slider-track { height:6px; background:rgba(255,255,255,0.06); border-radius:3px; position:relative; cursor:pointer; }
+  .slider-fill { height:100%; border-radius:3px; position:absolute; left:0; top:0; }
+  .slider-thumb { width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid #60a5fa; position:absolute; top:-5px; transform:translateX(-50%); cursor:grab; box-shadow:0 0 10px rgba(96,165,250,0.4); }
+  .slider-thumb:active { cursor:grabbing; }
+
+  .action-btn {
+    width:100%; padding:10px; margin-bottom:8px;
+    background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2);
+    border-radius:10px; color:#aab; font-size:0.78rem;
+    cursor:pointer; font-family:inherit; text-align:left;
+    display:flex; align-items:center; gap:8px;
+    transition:all 0.2s;
+  }
+  .action-btn:hover { background:rgba(96,165,250,0.15); border-color:rgba(96,165,250,0.35); color:#e0e8f0; }
+  .action-btn .a-icon { font-size:1.1rem; }
+
+  .btn-toggle {
+    position:fixed; right:12px; top:50%; transform:translateY(-50%);
+    width:40px; height:40px; border-radius:50%;
+    background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.3);
+    color:#60a5fa; font-size:1.2rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    z-index:20; transition:all 0.3s;
+  }
+  .btn-toggle:hover { background:rgba(96,165,250,0.25); }
+  .btn-toggle.active { right:270px; }
+
+  .bottom-bar {
     position:fixed; bottom:0; left:0; right:0;
-    display:flex; gap:6px; padding:8px 10px;
-    justify-content:center;
+    display:flex; gap:6px; padding:8px 10px; justify-content:center;
   }
-  .res-item {
-    background:rgba(0,0,0,0.75); border:1px solid rgba(255,255,255,0.12);
-    border-radius:14px; padding:8px 12px;
-    display:flex; align-items:center; gap:6px;
-    font-size:0.78rem; min-width:60px; justify-content:center;
-  }
+  .res-item { background:rgba(0,0,0,0.75); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:8px 12px; display:flex; align-items:center; gap:6px; font-size:0.78rem; min-width:60px; justify-content:center; }
   .res-item .ri-icon { font-size:1rem; }
   .res-item .ri-val { font-weight:700; }
-  .pop-c { color:#60a5fa; } .tech-c { color:#f59e0b; } .cul-c { color:#10b981; } .chaos-c { color:#ef4444; }
+  .pop-c{color:#60a5fa} .tech-c{color:#f59e0b} .cul-c{color:#10b981} .chaos-c{color:#ef4444}
 
-  /* 提示气泡 */
-  .tooltip {
-    position:fixed; pointer-events:none;
-    background:rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.2);
-    border-radius:12px; padding:10px 14px;
-    font-size:0.78rem; color:#ccd; max-width:200px;
-    opacity:0; transition:opacity 0.2s;
-    text-align:center; line-height:1.5;
-  }
-  .tooltip.show { opacity:1; }
-  .tooltip .tt-title { font-weight:700; font-size:0.85rem; margin-bottom:3px; }
+  .log-toast { position:fixed; top:70px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:8px 16px; font-size:0.75rem; color:#aab; opacity:0; transition:all 0.4s; pointer-events:none; z-index:15; }
+  .log-toast.show { opacity:1; top:80px; }
 
-  /* 事件弹窗 */
-  .event-popup {
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    background:rgba(10,14,24,0.95); border:1px solid rgba(120,140,200,0.25);
-    border-radius:20px; padding:24px 20px;
-    width:90%; max-width:380px;
-    text-align:center;
-    display:none; z-index:20;
-    backdrop-filter:blur(20px);
-  }
+  .event-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,14,24,0.97); border:1px solid rgba(120,140,200,0.25); border-radius:20px; padding:22px 18px; width:90%; max-width:360px; text-align:center; display:none; z-index:30; }
   .event-popup.show { display:block; animation:fadeIn 0.4s; }
   @keyframes fadeIn { from{opacity:0;transform:translate(-50%,-50%) scale(0.9)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
-  .event-popup .ep-icon { font-size:56px; margin-bottom:8px; }
-  .event-popup .ep-title { font-size:1.1rem; font-weight:700; color:#e0e8f8; margin-bottom:6px; }
-  .event-popup .ep-desc { font-size:0.82rem; color:#6a7a90; line-height:1.6; margin-bottom:16px; }
-  .event-popup .ep-effects { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px; }
-  .event-popup .ep-eff { padding:4px 10px; border-radius:10px; font-size:0.7rem; font-weight:600; background:rgba(255,255,255,0.04); }
-  .event-popup .ep-btn {
-    display:block; width:100%; padding:12px;
-    background:linear-gradient(135deg,#60a5fa,#a78bfa); color:#fff;
-    border:none; border-radius:14px; font-size:0.9rem; font-weight:600;
-    cursor:pointer; font-family:inherit;
-  }
+  .event-popup .ep-icon { font-size:52px; margin-bottom:8px; }
+  .event-popup .ep-title { font-size:1rem; font-weight:700; color:#e0e8f0; margin-bottom:6px; }
+  .event-popup .ep-desc { font-size:0.78rem; color:#6a7a90; line-height:1.6; margin-bottom:14px; }
+  .event-popup .ep-btn { display:block; width:100%; padding:12px; background:linear-gradient(135deg,#60a5fa,#a78bfa); color:#fff; border:none; border-radius:14px; font-size:0.88rem; font-weight:600; cursor:pointer; font-family:inherit; }
 
-  /* 结束画面 */
-  .end-screen {
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    background:rgba(10,14,24,0.97); border:1px solid rgba(120,140,200,0.3);
-    border-radius:24px; padding:28px 22px;
-    width:90%; max-width:380px;
-    text-align:center;
-    display:none; z-index:30;
-    backdrop-filter:blur(20px);
-  }
+  .end-screen { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,14,24,0.97); border:1px solid rgba(120,140,200,0.3); border-radius:24px; padding:26px 20px; width:90%; max-width:360px; text-align:center; display:none; z-index:30; }
   .end-screen.show { display:block; animation:fadeIn 0.6s; }
-  .end-screen .es-icon { font-size:72px; margin-bottom:10px; }
+  .end-screen .es-icon { font-size:64px; margin-bottom:10px; }
   .end-screen .es-title { font-size:1.3rem; font-weight:800; margin-bottom:6px; }
   .end-screen .es-desc { font-size:0.82rem; color:#6a7a90; line-height:1.7; margin-bottom:14px; }
   .end-screen .es-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:10px 0; }
   .end-screen .es-item { background:rgba(255,255,255,0.03); border-radius:10px; padding:10px; }
   .end-screen .es-item .esv { font-size:1.1rem; font-weight:700; }
   .end-screen .es-item .esl { font-size:0.62rem; color:#5a6a80; }
-  .end-screen .es-btn {
-    display:inline-block; margin-top:14px; padding:10px 30px;
-    background:linear-gradient(135deg,#60a5fa,#a78bfa); color:#fff;
-    border:none; border-radius:20px; font-size:0.85rem; font-weight:600;
-    cursor:pointer; font-family:inherit;
-  }
+  .end-screen .es-btn { display:inline-block; margin-top:12px; padding:10px 28px; background:linear-gradient(135deg,#60a5fa,#a78bfa); color:#fff; border:none; border-radius:20px; font-size:0.85rem; font-weight:600; cursor:pointer; font-family:inherit; }
 
-  /* 日志提示 */
-  .log-toast {
-    position:fixed; top:80px; left:50%; transform:translateX(-50%);
-    background:rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1);
-    border-radius:14px; padding:8px 18px;
-    font-size:0.75rem; color:#aab;
-    opacity:0; transition:all 0.4s;
-    pointer-events:none; white-space:nowrap;
-    z-index:15;
-  }
-  .log-toast.show { opacity:1; top:90px; }
-
-  /* 行动提示 */
-  .hint {
-    position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
-    font-size:0.7rem; color:rgba(255,255,255,0.3);
-    pointer-events:none;
-    transition:opacity 1s;
+  @media (max-width:480px) {
+    .side-panel { width:240px; }
+    .btn-toggle.active { right:250px; }
   }
 </style>
 </head>
@@ -141,116 +105,124 @@
 
 <div class="ui">
   <div class="top-bar">
-    <div class="era-badge" id="eraBadge">🌌 原始星云</div>
-    <div class="turn-badge" id="turnBadge">纪元 1</div>
+    <div class="badge" id="eraBadge">🌌 原始星云</div>
+    <div class="badge" id="turnBadge">纪元 1</div>
   </div>
-
   <div class="log-toast" id="logToast"></div>
+</div>
 
-  <div class="res-bar">
-    <div class="res-item"><span class="ri-icon">👥</span><span class="ri-val pop-c" id="rPop">1</span></div>
-    <div class="res-item"><span class="ri-icon">⚙️</span><span class="ri-val tech-c" id="rTech">0</span></div>
-    <div class="res-item"><span class="ri-icon">🎭</span><span class="ri-val cul-c" id="rCul">0</span></div>
-    <div class="res-item"><span class="ri-icon">🌪️</span><span class="ri-val chaos-c" id="rChaos">0</span></div>
+<button class="btn-toggle" id="btnToggle">⚙️</button>
+
+<div class="side-panel" id="sidePanel">
+  <div class="sp-title">🌍 星球参数</div>
+
+  <div class="sp-section">
+    <div class="sp-label">🌡️ 平均温度 <span class="val" id="vTemp">15°C</span></div>
+    <div class="slider-track" data-param="temp"><div class="slider-fill" id="fTemp" style="width:50%;background:linear-gradient(90deg,#3b82f6,#ef4444)"></div><div class="slider-thumb" id="tTemp" style="left:50%"></div></div>
   </div>
 
-  <div class="tooltip" id="tooltip"></div>
-  <div class="event-popup" id="eventPopup"></div>
-  <div class="end-screen" id="endScreen"></div>
-  <div class="hint" id="hint">点击星球上的光点来发展文明</div>
+  <div class="sp-section">
+    <div class="sp-label">💧 大气湿度 <span class="val" id="vHumid">50%</span></div>
+    <div class="slider-track" data-param="humid"><div class="slider-fill" id="fHumid" style="width:50%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div><div class="slider-thumb" id="tHumid" style="left:50%"></div></div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">🧭 磁场强度 <span class="val" id="vMag">50%</span></div>
+    <div class="slider-track" data-param="mag"><div class="slider-fill" id="fMag" style="width:50%;background:linear-gradient(90deg,#a78bfa,#8b5cf6)"></div><div class="slider-thumb" id="tMag" style="left:50%"></div></div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">☄️ 陨石频率 <span class="val" id="vMeteor">20%</span></div>
+    <div class="slider-track" data-param="meteor"><div class="slider-fill" id="fMeteor" style="width:20%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div><div class="slider-thumb" id="tMeteor" style="left:20%"></div></div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">🌊 地壳活动 <span class="val" id="vCrust">30%</span></div>
+    <div class="slider-track" data-param="crust"><div class="slider-fill" id="fCrust" style="width:30%;background:linear-gradient(90deg,#f97316,#ef4444)"></div><div class="slider-thumb" id="tCrust" style="left:30%"></div></div>
+  </div>
+
+  <div class="sp-title" style="margin-top:20px">⚡ 重大行动</div>
+  <button class="action-btn" id="actNext"><span class="a-icon">⏭️</span>推进一个纪元</button>
+  <button class="action-btn" id="actIce"><span class="a-icon">🧊</span>触发冰河期</button>
+  <button class="action-btn" id="actVolcano"><span class="a-icon">🌋</span>超级火山爆发</button>
+  <button class="action-btn" id="actAsteroid"><span class="a-icon">☄️</span>引导陨石撞击</button>
+  <button class="action-btn" id="actSun"><span class="a-icon">☀️</span>增强太阳辐射</button>
+  <button class="action-btn" id="actComet"><span class="a-icon">💫</span>彗星带来水源</button>
 </div>
+
+<div class="bottom-bar">
+  <div class="res-item"><span class="ri-icon">👥</span><span class="ri-val pop-c" id="rPop">1</span></div>
+  <div class="res-item"><span class="ri-icon">⚙️</span><span class="ri-val tech-c" id="rTech">0</span></div>
+  <div class="res-item"><span class="ri-icon">🎭</span><span class="ri-val cul-c" id="rCul">0</span></div>
+  <div class="res-item"><span class="ri-icon">🌪️</span><span class="ri-val chaos-c" id="rChaos">0</span></div>
+</div>
+
+<div class="event-popup" id="eventPopup"></div>
+<div class="end-screen" id="endScreen"></div>
 
 <script>
 // ========== Canvas 设置 ==========
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-let W, H, planetCX, planetCY, planetR;
+let W, H, DPR;
 
 function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  planetCX = W/2;
-  planetCY = H*0.38;
-  planetR = Math.min(W,H)*0.28;
-  // 如果瓦片已存在则重新计算坐标
-  if(state.tiles && state.tiles.length > 0){
-    state.tiles.forEach((t,i) => {
-      const n = state.tiles.length;
-      const angle = (i/n)*Math.PI*2 + (Math.random()-0.5)*0.4;
-      const dist = planetR * (0.55 + Math.random()*0.35);
-      t.x = planetCX + Math.cos(angle)*dist;
-      t.y = planetCY + Math.sin(angle)*dist*0.8;
-      t.r = planetR*0.18 + Math.random()*planetR*0.08;
-      t.angle = angle; t.dist = dist;
-    });
-  }
+  DPR = window.devicePixelRatio || 1;
+  W = canvas.width = window.innerWidth * DPR;
+  H = canvas.height = window.innerHeight * DPR;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.scale(DPR, DPR);
 }
+resize();
 window.addEventListener('resize', resize);
 
-// ========== 游戏状态 ==========
+// ========== 状态 ==========
 var state = {
   turn: 1, maxTurn: 12,
   pop: 1, tech: 0, culture: 0, chaos: 0,
-  era: 0, // 0=原始 1=远古 2=文明 3=现代
-  tiles: [], // {x,y,r,type,active,level}
-  particles: [],
-  stars: [],
+  era: 0,
+  // 参数
+  temp: 15, // -50 ~ 100
+  humid: 50, // 0 ~ 100
+  mag: 50, // 0 ~ 100
+  meteor: 20, // 0 ~ 100
+  crust: 30, // 0 ~ 100
+  // 内部
+  particles: [], stars: [],
   planetPulse: 0,
-  selectedTile: null,
   eventsTriggered: [],
-  gameOver: false,
-  ending: null
+  gameOver: false
 };
 
-// ========== 星球瓦片 ==========
-function generateTiles() {
-  const types = [
-    { name:'海洋', icon:'🌊', color:'#1a4a8a', effects:{pop:1,tech:0,culture:0,chaos:0} },
-    { name:'火山', icon:'🌋', color:'#8b3a1a', effects:{pop:0,tech:1,culture:0,chaos:2} },
-    { name:'森林', icon:'🌳', color:'#1a5a2a', effects:{pop:1,tech:0,culture:1,chaos:0} },
-    { name:'矿脉', icon:'💎', color:'#5a4a3a', effects:{pop:0,tech:2,culture:0,chaos:1} },
-    { name:'平原', icon:'🌾', color:'#5a8a2a', effects:{pop:2,tech:0,culture:0,chaos:0} },
-    { name:'遗迹', icon:'🏛️', color:'#8a7a4a', effects:{pop:0,tech:1,culture:2,chaos:0} },
-    { name:'冰原', icon:'❄️', color:'#8aaaba', effects:{pop:-1,tech:1,culture:0,chaos:1} },
-    { name:'热泉', icon:'♨️', color:'#4a7a6a', effects:{pop:1,tech:1,culture:0,chaos:1} },
-    { name:'高地', icon:'⛰️', color:'#6a5a4a', effects:{pop:0,tech:1,culture:1,chaos:1} },
-    { name:'河口', icon:'🏞️', color:'#3a6a4a', effects:{pop:2,tech:0,culture:1,chaos:0} },
-  ];
-
-  state.tiles = [];
-  const n = 6;
-  for(let i=0;i<n;i++){
-    const angle = (i/n)*Math.PI*2 + (Math.random()-0.5)*0.4;
-    const dist = planetR * (0.55 + Math.random()*0.35);
-    const x = planetCX + Math.cos(angle)*dist;
-    const y = planetCY + Math.sin(angle)*dist*0.8;
-    const type = types[Math.floor(Math.random()*types.length)];
-    state.tiles.push({
-      x,y, r:planetR*0.22 + Math.random()*planetR*0.1,
-      type, active:true, level:1,
-      angle, dist
-    });
-  }
-}
+// ========== 参数配置 ==========
+const params = {
+  temp: { min:-50, max:100, unit:'°C', label:'温度' },
+  humid: { min:0, max:100, unit:'%', label:'湿度' },
+  mag: { min:0, max:100, unit:'%', label:'磁场' },
+  meteor: { min:0, max:100, unit:'%', label:'陨石' },
+  crust: { min:0, max:100, unit:'%', label:'地壳' }
+};
 
 // ========== 粒子 ==========
 function spawnParticles(x,y,color,count) {
   for(let i=0;i<count;i++){
     state.particles.push({
       x,y,
-      vx:(Math.random()-0.5)*3,
-      vy:(Math.random()-0.5)*3-2,
-      life:1, decay:0.02+Math.random()*0.04,
-      color, size:2+Math.random()*3
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4-3,
+      life:1, decay:0.015+Math.random()*0.03,
+      color, size:2+Math.random()*4
     });
   }
 }
 
 // ========== 星空 ==========
 function initStars() {
-  for(let i=0;i<120;i++){
+  state.stars = [];
+  for(let i=0;i<150;i++){
     state.stars.push({
-      x:Math.random()*W, y:Math.random()*H,
+      x:Math.random()*window.innerWidth, y:Math.random()*window.innerHeight,
       r:Math.random()*1.5+0.3,
       twinkle:Math.random()*Math.PI*2,
       speed:0.02+Math.random()*0.04
@@ -260,8 +232,11 @@ function initStars() {
 
 // ========== 渲染 ==========
 function draw() {
-  ctx.clearRect(0,0,W,H);
-  const cx = planetCX, cy = planetCY, prd = planetR;
+  const w = window.innerWidth, h = window.innerHeight;
+  ctx.clearRect(0,0,w,h);
+
+  const cx = w/2, cy = h*0.35;
+  const pr = Math.min(w,h)*0.3;
 
   // 星空
   state.stars.forEach(s => {
@@ -271,270 +246,168 @@ function draw() {
     ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
   });
 
-  // 星球光晕
-  state.planetPulse += 0.02;
-  const glowR = Math.min(W,H)*0.3 + Math.sin(state.planetPulse)*8;
-  const glow = ctx.createRadialGradient(cx,cy,glowR*0.5,cx,cy,glowR*1.4);
-  const eraColors = [
-    'rgba(40,80,180,0.15)','rgba(40,140,100,0.15)',
-    'rgba(180,140,40,0.15)','rgba(140,80,200,0.15)'
+  // 光晕
+  state.planetPulse += 0.015;
+  const glowR = pr + Math.sin(state.planetPulse)*10;
+  const glow = ctx.createRadialGradient(cx,cy,pr*0.4,cx,cy,glowR*1.5);
+  const eraGlows = [
+    'rgba(40,80,180,0.2)','rgba(40,140,80,0.2)',
+    'rgba(180,140,40,0.2)','rgba(140,80,200,0.2)'
   ];
-  glow.addColorStop(0,eraColors[state.era]);
+  glow.addColorStop(0,eraGlows[state.era]);
   glow.addColorStop(1,'transparent');
   ctx.fillStyle = glow;
-  ctx.beginPath(); ctx.arc(cx,cy,glowR*1.4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,glowR*1.5,0,Math.PI*2); ctx.fill();
 
-  // 星球本体
-  const planetGrad = ctx.createRadialGradient(cx-prd*0.2,cy-prd*0.2,prd*0.1,cx,cy,prd);
-  const eraPlanetColors = [
-    ['#0a2a5a','#1a4a8a','#0a1a3a'],
-    ['#0a3a2a','#1a5a3a','#0a2a1a'],
-    ['#3a2a0a','#5a4a1a','#2a1a0a'],
-    ['#1a0a3a','#3a1a5a','#1a0a2a']
-  ];
-  const pc = eraPlanetColors[state.era];
-  planetGrad.addColorStop(0,pc[0]);
-  planetGrad.addColorStop(0.6,pc[1]);
-  planetGrad.addColorStop(1,pc[2]);
+  // 星球颜色基于参数
+  const tempRatio = (state.temp + 50) / 150; // 0~1
+  const humidRatio = state.humid / 100;
+  const r = Math.round(20 + tempRatio*80 + (1-humidRatio)*40);
+  const g = Math.round(30 + humidRatio*100 + (1-tempRatio)*30);
+  const b = Math.round(60 + (1-tempRatio)*60 + humidRatio*40);
+  const cr = Math.min(255, r), cg = Math.min(255, g), cb = Math.min(255, b);
+
+  const planetGrad = ctx.createRadialGradient(cx-pr*0.25,cy-pr*0.25,pr*0.1,cx,cy,pr);
+  planetGrad.addColorStop(0,`rgb(${cr+20},${cg+20},${cb+20})`);
+  planetGrad.addColorStop(0.6,`rgb(${cr},${cg},${cb})`);
+  planetGrad.addColorStop(1,`rgb(${Math.max(0,cr-40)},${Math.max(0,cg-40)},${Math.max(0,cb-40)})`);
   ctx.fillStyle = planetGrad;
-  ctx.beginPath(); ctx.arc(cx,cy,prd,0,Math.PI*2); ctx.fill();
-
-  // 星球表面纹理
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for(let i=0;i<8;i++){
-    const a = (i/8)*Math.PI*2;
-    ctx.beginPath();
-    ctx.arc(cx+Math.cos(a)*prd*0.3,cy+Math.sin(a)*prd*0.2,prd*0.3,0,Math.PI*2);
-    ctx.stroke();
-  }
+  ctx.beginPath(); ctx.arc(cx,cy,pr,0,Math.PI*2); ctx.fill();
 
   // 大气层
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(cx,cy,prd+4,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,pr+3,0,Math.PI*2); ctx.stroke();
 
-  // 瓦片
-  state.tiles.forEach(t => {
-    if(!t.active) return;
-    const pulse = 1 + Math.sin(state.planetPulse*2 + t.angle)*0.05;
-    const r = t.r * pulse;
-    const isSelected = state.selectedTile === t;
-
-    // 光晕
-    if(isSelected){
-      const sg = ctx.createRadialGradient(t.x,t.y,r*0.5,t.x,t.y,r*1.5);
-      sg.addColorStop(0,'rgba(255,255,255,0.2)');
-      sg.addColorStop(1,'transparent');
-      ctx.fillStyle = sg;
-      ctx.beginPath(); ctx.arc(t.x,t.y,r*1.5,0,Math.PI*2); ctx.fill();
+  // 磁场线（磁场强度高时显示）
+  if(state.mag > 30){
+    ctx.strokeStyle = `rgba(167,139,250,${state.mag/200})`;
+    ctx.lineWidth = 1;
+    for(let i=0;i<3;i++){
+      const angle = state.planetPulse*0.5 + (i/3)*Math.PI;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pr*(1.2+i*0.15), pr*(1.2+i*0.15)*0.3, angle, 0, Math.PI*2);
+      ctx.stroke();
     }
+  }
 
-    // 瓦片本体
-    const tg = ctx.createRadialGradient(t.x-r*0.2,t.y-r*0.2,r*0.1,t.x,t.y,r);
-    tg.addColorStop(0,t.type.color);
-    tg.addColorStop(1,'rgba(0,0,0,0.4)');
-    ctx.fillStyle = tg;
-    ctx.beginPath(); ctx.arc(t.x,t.y,r,0,Math.PI*2); ctx.fill();
-
-    // 边框
-    ctx.strokeStyle = isSelected ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = isSelected ? 2 : 1;
-    ctx.beginPath(); ctx.arc(t.x,t.y,r,0,Math.PI*2); ctx.stroke();
-
-    // 图标
-    ctx.font = `${r*0.7}px sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(t.type.icon, t.x, t.y-r*0.1);
-
-    // 名称
-    ctx.font = `${r*0.25}px "PingFang SC","Microsoft YaHei",sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText(t.type.name, t.x, t.y+r*0.55);
-
-    // 等级标记
-    if(t.level>1){
-      ctx.font = `${r*0.2}px sans-serif`;
-      ctx.fillStyle = '#ffd452';
-      for(let i=0;i<Math.min(t.level-1,3);i++){
-        ctx.fillText('★', t.x-r*0.4+i*r*0.4, t.y-r*0.5);
-      }
+  // 陨石环（陨石频率高时显示）
+  if(state.meteor > 30){
+    ctx.fillStyle = `rgba(245,158,11,${state.meteor/300})`;
+    for(let i=0;i<Math.floor(state.meteor/10);i++){
+      const a = state.planetPulse*0.3 + (i/10)*Math.PI*2;
+      const d = pr*(1.3 + Math.sin(a*3)*0.1);
+      ctx.beginPath();
+      ctx.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d*0.5, 1.5, 0, Math.PI*2);
+      ctx.fill();
     }
-  });
+  }
+
+  // 地壳裂纹（地壳活动高时显示）
+  if(state.crust > 40){
+    ctx.strokeStyle = `rgba(239,68,68,${state.crust/200})`;
+    ctx.lineWidth = 1.5;
+    for(let i=0;i<Math.floor(state.crust/20);i++){
+      const a = state.planetPulse*0.4 + (i/5)*Math.PI*2;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*pr*0.3, cy+Math.sin(a)*pr*0.3);
+      ctx.lineTo(cx+Math.cos(a+0.5)*pr*0.8, cy+Math.sin(a+0.5)*pr*0.8);
+      ctx.stroke();
+    }
+  }
+
+  // 云层（湿度高时显示）
+  if(state.humid > 40){
+    ctx.fillStyle = `rgba(255,255,255,${state.humid/500})`;
+    for(let i=0;i<Math.floor(state.humid/15);i++){
+      const a = state.planetPulse*0.2 + (i/7)*Math.PI*2;
+      const d = pr*(0.5 + Math.sin(a*2)*0.2);
+      ctx.beginPath();
+      ctx.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d*0.6, 8+Math.sin(a*3)*4, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
 
   // 粒子
   state.particles = state.particles.filter(p => {
     p.life -= p.decay;
     if(p.life<=0) return false;
-    p.x += p.vx; p.y += p.vy;
-    ctx.fillStyle = `rgba(255,255,255,${p.life*0.6})`;
+    p.x += p.vx; p.y += p.vy; p.vy += 0.05;
+    ctx.fillStyle = p.color || 'rgba(255,255,255,'+p.life*0.6+')';
     ctx.beginPath(); ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2); ctx.fill();
     return true;
   });
-
-  // 城市小点（文明程度高时出现）
-  if(state.pop >= 5){
-    state.tiles.filter(t=>t.active&&t.level>=2).forEach(t=>{
-      for(let i=0;i<Math.min(t.level,3);i++){
-        const ax = t.x + (Math.random()-0.5)*t.r*1.5;
-        const ay = t.y + (Math.random()-0.5)*t.r*1.5;
-        ctx.fillStyle = `rgba(255,220,100,${0.4+Math.random()*0.4})`;
-        ctx.fillRect(ax-1.5,ay-1.5,3,3);
-      }
-    });
-  }
 }
 
-// ========== 事件系统 ==========
-const allEvents = [
-  { id:'life', turn:2, icon:'🦠', title:'生命萌芽', desc:'温暖的浅海中，第一批有机分子开始自我复制。生命的火花被点燃了。', effects:{pop:2,tech:1}, era:0 },
-  { id:'multi', turn:3, icon:'🐟', title:'寒武纪大爆发', desc:'海洋中突然涌现了无数奇形怪状的生物，生命开启了疯狂的实验。', effects:{pop:3,tech:2,chaos:1}, era:0 },
-  { id:'land', turn:5, icon:'🦎', title:'登陆', desc:'第一批植物和动物爬上了陆地，一个全新的世界在等待着它们。', effects:{pop:2,tech:2,culture:1}, era:1 },
-  { id:'extinct', turn:6, icon:'☄️', title:'大灭绝', desc:'一颗小行星撞击了星球，尘埃遮蔽天空。但你选择的栖息地决定了幸存者的命运。', effects:{pop:-2,tech:1,chaos:-1}, era:1 },
-  { id:'fire', turn:7, icon:'🔥', title:'火的驯服', desc:'智慧生物学会了使用火——这是文明真正的起点。', effects:{pop:2,tech:3,culture:2}, era:2 },
-  { id:'city', turn:9, icon:'🏙️', title:'第一座城', desc:'在河口和平原上，第一批城市拔地而起。文字、法律、贸易随之诞生。', effects:{pop:3,tech:2,culture:3}, era:2 },
-  { id:'science', turn:10, icon:'🔬', title:'科学革命', desc:'望远镜对准了星空，显微镜窥探了微观。人类开始理解宇宙的法则。', effects:{tech:4,culture:3,chaos:1}, era:3 },
-  { id:'crisis', turn:11, icon:'🌍', title:'全球危机', desc:'文明第一次面临自己制造的生存危机——你会如何选择？', effects:{chaos:3,tech:2}, era:3 },
-];
+// ========== 模拟逻辑 ==========
+function simulate() {
+  // 基于参数计算文明变化
+  let popChange = 0, techChange = 0, culChange = 0, chaosChange = 0;
 
-// ========== 交互 ==========
-canvas.addEventListener('click', e => {
-  if(state.gameOver) return;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = W / rect.width;
-  const scaleY = H / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
+  // 温度影响
+  if(state.temp < -20) { popChange -= 2; chaosChange += 1; } // 太冷
+  else if(state.temp < 0) { popChange -= 1; }
+  else if(state.temp > 20 && state.temp < 35) { popChange += 2; } // 适宜
+  else if(state.temp > 50) { popChange -= 3; chaosChange += 2; } // 太热
 
-  // 检查是否点击了瓦片
-  let clicked = null;
-  if(state.tiles){
-    for(const t of state.tiles){
-      if(!t.active) continue;
-      const dx = mx-t.x, dy = my-t.y;
-      if(dx*dx+dy*dy < t.r*t.r*1.5){
-        clicked = t; break;
-      }
-    }
-  }
+  // 湿度影响
+  if(state.humid > 70) { popChange += 1; culChange += 1; } // 湿润利于农业
+  if(state.humid > 90) { chaosChange += 1; } // 洪水
+  if(state.humid < 20) { popChange -= 1; chaosChange += 1; } // 干旱
 
-  if(clicked){
-    state.selectedTile = clicked;
-    applyTile(clicked);
-  } else {
-    // 没点到瓦片也检查是否在星球范围内，给出反馈
-    const dxc = mx-planetCX, dyc = my-planetCY;
-    if(dxc*dxc+dyc*dyc < planetR*planetR*1.2){
-      // 点击了星球但没有瓦片，显示提示
-      showToast('👆 点击星球表面的标记区域来发展文明');
-    }
-    state.selectedTile = null;
-  }
-});
+  // 磁场影响
+  if(state.mag > 60) { techChange += 1; chaosChange -= 1; } // 强磁场保护
+  if(state.mag < 30) { chaosChange += 2; } // 辐射伤害
 
-canvas.addEventListener('mousemove', e => {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = W / rect.width;
-  const scaleY = H / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
-  let hovered = null;
-  if(state.tiles){
-    for(const t of state.tiles){
-      if(!t.active) continue;
-      const dx = mx-t.x, dy = my-t.y;
-      if(dx*dx+dy*dy < t.r*t.r*1.3){ hovered=t; break; }
-    }
-  }
-  canvas.style.cursor = hovered ? 'pointer' : 'default';
+  // 陨石影响
+  if(state.meteor > 50) { popChange -= 3; chaosChange += 3; techChange += 1; } // 毁灭但带来稀有矿物
+  else if(state.meteor > 20) { popChange -= 1; chaosChange += 1; }
 
-  const tt = document.getElementById('tooltip');
-  if(hovered){
-    tt.innerHTML = `<div class="tt-title">${hovered.type.icon} ${hovered.type.name} Lv.${hovered.level}</div>
-      点击发展：${getEffectText(hovered.type.effects)}`;
-    tt.className = 'tooltip show';
-    tt.style.left = (mx+20)+'px';
-    tt.style.top = (my-40)+'px';
-  } else {
-    tt.className = 'tooltip';
-  }
-});
+  // 地壳影响
+  if(state.crust > 60) { popChange -= 2; chaosChange += 2; techChange += 1; } // 火山带来矿产
+  else if(state.crust > 30) { popChange += 1; techChange += 1; } // 适度地质活动
 
-function getEffectText(eff){
-  const parts = [];
-  if(eff.pop) parts.push(`人口${eff.pop>0?'+':''}${eff.pop}`);
-  if(eff.tech) parts.push(`科技${eff.tech>0?'+':''}${eff.tech}`);
-  if(eff.culture) parts.push(`文化${eff.culture>0?'+':''}${eff.culture}`);
-  if(eff.chaos) parts.push(`混沌${eff.chaos>0?'+':''}${eff.chaos}`);
-  return parts.join(' ');
-}
+  // 随机波动
+  popChange += Math.floor(Math.random()*3)-1;
 
-function applyTile(tile) {
-  if(!state.tiles) return;
-  const eff = tile.type.effects;
-  state.pop = Math.max(0, state.pop + eff.pop);
-  state.tech = Math.max(0, state.tech + eff.tech);
-  state.culture = Math.max(0, state.culture + eff.culture);
-  state.chaos = Math.max(0, state.chaos + eff.chaos);
+  state.pop = Math.max(0, state.pop + popChange);
+  state.tech = Math.max(0, state.tech + techChange);
+  state.culture = Math.max(0, state.culture + culChange);
+  state.chaos = Math.max(0, state.chaos + chaosChange);
 
-  // 升级瓦片
-  tile.level++;
-  if(tile.level > 4) tile.level = 4;
-
-  // 粒子效果
-  spawnParticles(tile.x, tile.y, tile.type.color, 12);
-
-  // 提示
-  showToast(`${tile.type.icon} 发展了 ${tile.type.name}！${getEffectText(eff)}`);
-
-  // 推进回合
-  state.turn++;
-  updateUI();
-
-  // 检查时代
-  if(state.turn >= 5 && state.era < 1) { state.era = 1; refreshTiles(); }
-  if(state.turn >= 7 && state.era < 2) { state.era = 2; refreshTiles(); }
-  if(state.turn >= 10 && state.era < 3) { state.era = 3; refreshTiles(); }
+  // 时代推进
+  if(state.turn >= 4 && state.era < 1) state.era = 1;
+  if(state.turn >= 7 && state.era < 2) state.era = 2;
+  if(state.turn >= 10 && state.era < 3) state.era = 3;
 
   // 检查事件
-  const evt = allEvents.find(e => e.turn === state.turn && !state.eventsTriggered.includes(e.id));
-  if(evt){
-    state.eventsTriggered.push(evt.id);
-    showEvent(evt);
-  }
-
-  // 检查结束
-  checkGameEnd();
+  checkEvents();
+  checkEnd();
 }
 
-function refreshTiles() {
-  const advancedTypes = [
-    [
-      { name:'平原', icon:'🌾', color:'#5a8a2a', effects:{pop:2,tech:0,culture:0,chaos:0} },
-      { name:'森林', icon:'🌳', color:'#1a5a2a', effects:{pop:1,tech:0,culture:1,chaos:0} },
-      { name:'热泉', icon:'♨️', color:'#4a7a6a', effects:{pop:1,tech:1,culture:0,chaos:1} },
-    ],
-    [
-      { name:'矿脉', icon:'💎', color:'#5a4a3a', effects:{pop:0,tech:2,culture:0,chaos:1} },
-      { name:'河口', icon:'🏞️', color:'#3a6a4a', effects:{pop:2,tech:0,culture:1,chaos:0} },
-      { name:'高地', icon:'⛰️', color:'#6a5a4a', effects:{pop:0,tech:1,culture:1,chaos:1} },
-    ],
-    [
-      { name:'城市', icon:'🏙️', color:'#8a8a3a', effects:{pop:2,tech:2,culture:2,chaos:1} },
-      { name:'实验室', icon:'🔬', color:'#4a6a8a', effects:{pop:0,tech:3,culture:1,chaos:2} },
-      { name:'学院', icon:'📚', color:'#6a4a6a', effects:{pop:0,tech:1,culture:3,chaos:0} },
-    ]
-  ];
+// ========== 事件 ==========
+const events = [
+  { id:'life', turn:2, icon:'🦠', title:'生命萌芽', desc:'在适宜的温度和湿度下，原始汤中出现了第一批有机分子。', cond:()=>state.temp>-10&&state.temp<40&&state.humid>30 },
+  { id:'cell', turn:3, icon:'🧬', title:'单细胞时代', desc:'简单的细胞结构在热泉附近形成，生命开始了漫长的演化。', cond:()=>state.crust>20 },
+  { id:'multi', turn:4, icon:'🐟', title:'多细胞大爆发', desc:'海洋中突然涌现出复杂的多细胞生物，生命形态空前丰富。', cond:()=>state.humid>50&&state.temp>10 },
+  { id:'land', turn:5, icon:'🦎', title:'登陆', desc:'第一批植物和动物爬上了陆地，全新的生态系统正在形成。', cond:()=>state.temp>5&&state.temp<35&&state.humid>30 },
+  { id:'dino', turn:6, icon:'🦕', title:'巨兽时代', desc:'温暖湿润的气候孕育了巨型生物，它们统治了这颗星球。', cond:()=>state.temp>25&&state.humid>60 },
+  { id:'extinct', turn:7, icon:'☄️', title:'大灭绝', desc:'环境剧变导致大规模灭绝，但幸存者获得了新的生存空间。', cond:()=>state.meteor>40||state.crust>60||state.temp<-10 },
+  { id:'mammal', turn:8, icon:'🐒', title:'哺乳动物崛起', desc:'小型哺乳动物在灾难后迅速繁衍，智慧开始萌芽。', cond:()=>state.pop>0 },
+  { id:'fire', turn:9, icon:'🔥', title:'火的驯服', desc:'智慧生物学会了使用火，文明的第一缕曙光出现了。', cond:()=>state.temp>0&&state.temp<40 },
+  { id:'city', turn:10, icon:'🏙️', title:'城市建立', desc:'第一批城市在河流和平原上拔地而起，文字和法律随之诞生。', cond:()=>state.pop>=3&&state.humid>30 },
+  { id:'science', turn:11, icon:'🔬', title:'科学革命', desc:'望远镜对准了星空，文明开始理解宇宙的法则。', cond:()=>state.tech>=3 },
+  { id:'crisis', turn:12, icon:'🌍', title:'全球危机', desc:'文明面临自己制造的生存危机，命运掌握在你的手中。', cond:()=>true },
+];
 
-  // 替换部分旧瓦片
-  const pool = advancedTypes[state.era-1] || [];
-  state.tiles.forEach((t,i) => {
-    if(Math.random() < 0.4 && pool.length > 0){
-      const nt = pool[Math.floor(Math.random()*pool.length)];
-      t.type = nt;
-      t.level = 1;
+function checkEvents() {
+  for(const evt of events){
+    if(evt.turn === state.turn && !state.eventsTriggered.includes(evt.id) && evt.cond()){
+      state.eventsTriggered.push(evt.id);
+      showEvent(evt);
+      return; // 一次只触发一个
     }
-  });
+  }
 }
 
 function showEvent(evt) {
@@ -543,44 +416,21 @@ function showEvent(evt) {
     <div class="ep-icon">${evt.icon}</div>
     <div class="ep-title">${evt.title}</div>
     <div class="ep-desc">${evt.desc}</div>
-    <div class="ep-effects">
-      ${evt.effects.pop?`<span class="ep-eff" style="color:#60a5fa">👥 ${evt.effects.pop>0?'+':''}${evt.effects.pop}</span>`:''}
-      ${evt.effects.tech?`<span class="ep-eff" style="color:#f59e0b">⚙️ +${evt.effects.tech}</span>`:''}
-      ${evt.effects.culture?`<span class="ep-eff" style="color:#10b981">🎭 +${evt.effects.culture}</span>`:''}
-      ${evt.effects.chaos?`<span class="ep-eff" style="color:#ef4444">🌪️ ${evt.effects.chaos>0?'+':''}${evt.effects.chaos}</span>`:''}
-    </div>
     <button class="ep-btn" id="epBtn">继续 →</button>
   `;
   popup.classList.add('show');
-
   document.getElementById('epBtn').onclick = () => {
     popup.classList.remove('show');
-    // 应用事件效果
-    const eff = evt.effects;
-    state.pop = Math.max(0,state.pop + (eff.pop||0));
-    state.tech += (eff.tech||0);
-    state.culture += (eff.culture||0);
-    state.chaos += (eff.chaos||0);
-    if(eff.chaos) spawnParticles(W/2, H*0.38, '#ef4444', 20);
-    updateUI();
-    checkGameEnd();
   };
 }
 
-function showToast(msg) {
-  const t = document.getElementById('logToast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 1800);
-}
-
-function checkGameEnd() {
+function checkEnd() {
   if(state.pop <= 0) { endGame('extinct'); return; }
-  if(state.chaos >= 25) { endGame('chaos'); return; }
+  if(state.chaos >= 30) { endGame('chaos'); return; }
   if(state.turn > state.maxTurn) {
-    if(state.tech >= 25 && state.culture >= 20) endGame('utopia');
-    else if(state.tech >= 25 && state.chaos >= 15) endGame('dystopia');
-    else if(state.pop >= 15) endGame('thriving');
+    if(state.tech >= 15 && state.culture >= 10) endGame('utopia');
+    else if(state.tech >= 15 && state.chaos >= 10) endGame('dystopia');
+    else if(state.pop >= 10) endGame('thriving');
     else endGame('modest');
   }
 }
@@ -588,7 +438,7 @@ function checkGameEnd() {
 function endGame(type) {
   state.gameOver = true;
   const endings = {
-    extinct: { icon:'💀', title:'文明终结', color:'#ef4444', desc:'这颗星球上的生命之火熄灭了。也许在宇宙的另一个角落，新的有机分子正在温暖的浅海中悄然合成。' },
+    extinct: { icon:'💀', title:'文明终结', color:'#ef4444', desc:'这颗星球上的生命之火熄灭了。也许，在宇宙的另一个角落，新的氨基酸正在温暖的浅海中悄然合成。' },
     chaos: { icon:'🌪️', title:'混沌吞噬', color:'#f59e0b', desc:'文明在内部的撕裂和外部的灾难中崩溃。但废墟之下，总有种子在等待下一个春天。' },
     utopia: { icon:'🌈', title:'理想国', color:'#10b981', desc:'科技与文化达到完美平衡。没有战争，没有饥饿，每个生命都能自由地追求自己的星辰大海。' },
     dystopia: { icon:'👁️', title:'反乌托邦', color:'#a78bfa', desc:'科技飞速发展，但灵魂被遗忘。高效、冷酷、完美——但这还是文明吗？' },
@@ -607,31 +457,146 @@ function endGame(type) {
       <div class="es-item"><div class="esv" style="color:#10b981">${state.culture}</div><div class="esl">文化等级</div></div>
       <div class="es-item"><div class="esv" style="color:#ef4444">${state.chaos}</div><div class="esl">混沌指数</div></div>
     </div>
-    <div style="font-size:0.72rem;color:#5a6a80;margin-top:4px;">历经 ${state.turn} 个纪元</div>
+    <div style="font-size:0.7rem;color:#5a6a80;margin-top:4px">温度:${state.temp}°C 湿度:${state.humid}% 磁场:${state.mag}% 陨石:${state.meteor}% 地壳:${state.crust}%</div>
     <button class="es-btn" onclick="location.reload()">⟳ 再次孕育文明</button>
   `;
   es.classList.add('show');
 }
 
+// ========== UI 更新 ==========
 function updateUI() {
   document.getElementById('rPop').textContent = state.pop;
   document.getElementById('rTech').textContent = state.tech;
   document.getElementById('rCul').textContent = state.culture;
   document.getElementById('rChaos').textContent = state.chaos;
-  document.getElementById('turnBadge').textContent = `纪元 ${state.turn}`;
+  document.getElementById('turnBadge').textContent = '纪元 ' + state.turn;
 
-  const eraNames = ['🌌 原始星云','🌿 远古时代','🏛️ 文明曙光','🚀 技术纪元'];
-  document.getElementById('eraBadge').textContent = eraNames[state.era] || eraNames[3];
+  const eras = ['🌌 原始星云','🌿 远古时代','🏛️ 文明曙光','🚀 技术纪元'];
+  document.getElementById('eraBadge').textContent = eras[state.era] || eras[3];
 
-  // 隐藏提示
-  if(state.turn > 2){
-    document.getElementById('hint').style.opacity = '0';
-  }
+  // 更新参数显示
+  document.getElementById('vTemp').textContent = state.temp + '°C';
+  document.getElementById('vHumid').textContent = state.humid + '%';
+  document.getElementById('vMag').textContent = state.mag + '%';
+  document.getElementById('vMeteor').textContent = state.meteor + '%';
+  document.getElementById('vCrust').textContent = state.crust + '%';
+
+  updateSlider('temp', state.temp, params.temp);
+  updateSlider('humid', state.humid, params.humid);
+  updateSlider('mag', state.mag, params.mag);
+  updateSlider('meteor', state.meteor, params.meteor);
+  updateSlider('crust', state.crust, params.crust);
 }
+
+function updateSlider(key, val, cfg) {
+  const pct = (val - cfg.min) / (cfg.max - cfg.min) * 100;
+  document.getElementById('f'+key.charAt(0).toUpperCase()+key.slice(1)).style.width = pct + '%';
+  document.getElementById('t'+key.charAt(0).toUpperCase()+key.slice(1)).style.left = pct + '%';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('logToast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ========== 滑块交互 ==========
+let dragging = null;
+
+function getSliderValue(track, cfg, clientX) {
+  const rect = track.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  return Math.round(cfg.min + pct * (cfg.max - cfg.min));
+}
+
+function initSliders() {
+  document.querySelectorAll('.slider-track').forEach(track => {
+    const key = track.dataset.param;
+    const cfg = params[key];
+
+    track.addEventListener('mousedown', e => {
+      dragging = key;
+      state[key] = getSliderValue(track, cfg, e.clientX);
+      updateUI();
+      spawnParticles(e.clientX, e.clientY, '#60a5fa', 5);
+    });
+    track.addEventListener('touchstart', e => {
+      dragging = key;
+      state[key] = getSliderValue(track, cfg, e.touches[0].clientX);
+      updateUI();
+    }, {passive:true});
+  });
+
+  document.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    const track = document.querySelector('[data-param="'+dragging+'"]');
+    if(!track) return;
+    state[dragging] = getSliderValue(track, params[dragging], e.clientX);
+    updateUI();
+  });
+  document.addEventListener('touchmove', e => {
+    if(!dragging) return;
+    const track = document.querySelector('[data-param="'+dragging+'"]');
+    if(!track) return;
+    state[dragging] = getSliderValue(track, params[dragging], e.touches[0].clientX);
+    updateUI();
+  }, {passive:true});
+
+  document.addEventListener('mouseup', () => { dragging = null; });
+  document.addEventListener('touchend', () => { dragging = null; });
+}
+
+// ========== 行动按钮 ==========
+document.getElementById('btnToggle').onclick = () => {
+  const panel = document.getElementById('sidePanel');
+  const btn = document.getElementById('btnToggle');
+  panel.classList.toggle('show');
+  btn.classList.toggle('active');
+  btn.textContent = panel.classList.contains('show') ? '✕' : '⚙️';
+};
+
+document.getElementById('actNext').onclick = () => {
+  if(state.gameOver) return;
+  state.turn++;
+  simulate();
+  updateUI();
+  showToast('⏭️ 纪元 ' + state.turn + ' 开始了');
+  spawnParticles(window.innerWidth/2, window.innerHeight*0.35, '#60a5fa', 15);
+};
+
+document.getElementById('actIce').onclick = () => {
+  state.temp -= 20; state.humid -= 10; state.chaos += 2;
+  updateUI(); showToast('🧊 冰河期降临！温度骤降');
+  spawnParticles(window.innerWidth/2, window.innerHeight*0.35, '#a5f3fc', 20);
+};
+
+document.getElementById('actVolcano').onclick = () => {
+  state.crust += 30; state.temp += 10; state.chaos += 3; state.tech += 2;
+  updateUI(); showToast('🌋 超级火山爆发！');
+  spawnParticles(window.innerWidth/2, window.innerHeight*0.35, '#f97316', 25);
+};
+
+document.getElementById('actAsteroid').onclick = () => {
+  state.meteor += 40; state.chaos += 4; state.pop -= 2; state.tech += 3;
+  updateUI(); showToast('☄️ 陨石撞击！');
+  spawnParticles(window.innerWidth/2, window.innerHeight*0.35, '#f59e0b', 30);
+};
+
+document.getElementById('actSun').onclick = () => {
+  state.temp += 15; state.mag += 10;
+  updateUI(); showToast('☀️ 太阳辐射增强！');
+  spawnParticles(window.innerWidth/2, window.innerHeight*0.35, '#ffd452', 20);
+};
+
+document.getElementById('actComet').onclick = () => {
+  state.humid += 30; state.meteor += 10; state.culture += 2;
+  updateUI(); showToast('💫 彗星带来水源！');
+  spawnParticles(window.innerWidth/2, window.innerHeight*0.35, '#60a5fa', 20);
+};
 
 // ========== 游戏循环 ==========
 function gameLoop() {
-  if(state.tiles) draw();
+  draw();
   requestAnimationFrame(gameLoop);
 }
 
@@ -639,13 +604,13 @@ function gameLoop() {
 function start() {
   resize();
   initStars();
-  generateTiles();
+  initSliders();
   updateUI();
   gameLoop();
 }
 start();
 
-// 暴露状态到全局用于调试
+// 暴露状态
 window._gameState = state;
 </script>
 </body>

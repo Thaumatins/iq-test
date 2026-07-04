@@ -701,8 +701,8 @@ function renderQuestion() {
   btnRow.innerHTML = `
     ${currentQ > 0 ? '<button class="btn btn-prev" onclick="prevQuestion()">← 上一题</button>' : ''}
     ${isLast
-      ? `<button class="btn btn-submit" onclick="submitTest()" ${selected === null ? 'disabled' : ''}>提交测试</button>`
-      : `<button class="btn btn-next" onclick="nextQuestion()" ${selected === null ? 'disabled' : ''}>下一题 →</button>`
+      ? `<button class="btn btn-submit" id="nextBtn" onclick="submitTest()" ${selected === null ? 'disabled' : ''}>提交测试</button>`
+      : `<button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" ${selected === null ? 'disabled' : ''}>下一题 →</button>`
     }
   `;
 
@@ -715,7 +715,7 @@ function selectOption(idx) {
   document.querySelectorAll('.opt-btn').forEach(b => {
     b.classList.toggle('selected', parseInt(b.dataset.idx) === idx);
   });
-  const btn = document.querySelector('.btn-next, .btn-submit');
+  const btn = document.getElementById('nextBtn');
   if (btn) btn.disabled = false;
 }
 

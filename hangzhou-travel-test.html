@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>杭州 · 去哪儿玩 | 旅行人格测试</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0b1a1a;
+    --card-bg: rgba(15,30,28,0.9);
+    --gold: #b8a06e;
+    --gold-light: #d4c098;
+    --green: #5a8f7b;
+    --green-light: #7ab8a0;
+    --text: #d0d8d0;
+    --text-dim: #6a7a72;
+    --border: rgba(150,180,160,0.2);
+  }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(90,143,123,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(184,160,110,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(122,184,160,0.03) 0%, transparent 60%);
+  }
+
+  /* 山水背景层 */
+  .landscape {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 35%;
+    pointer-events: none; z-index: 0; opacity: 0.06;
+    background:
+      linear-gradient(180deg, transparent 0%, rgba(90,143,123,0.3) 60%, rgba(60,100,80,0.5) 100%);
+  }
+  .landscape::before {
+    content: ''; position: absolute; bottom: 15%; left: 5%;
+    width: 20%; height: 40%;
+    background: radial-gradient(ellipse at center, rgba(120,160,140,0.4), transparent);
+    border-radius: 50% 50% 0 0;
+  }
+  .landscape::after {
+    content: ''; position: absolute; bottom: 10%; right: 10%;
+    width: 15%; height: 30%;
+    background: radial-gradient(ellipse at center, rgba(120,160,140,0.3), transparent);
+    border-radius: 50% 50% 0 0;
+  }
+
+  /* 飘浮粒子 */
+  .particles {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+  .particle {
+    position: absolute; border-radius: 50%;
+    animation: drift linear infinite;
+    opacity: 0;
+  }
+  @keyframes drift {
+    0% { transform: translateY(105vh) translateX(0) scale(0); opacity: 0; }
+    5% { opacity: 0.6; }
+    95% { opacity: 0.1; }
+    100% { transform: translateY(-5vh) translateX(30px) scale(1.5); opacity: 0; }
+  }
+
+  /* 主容器 */
+  .container {
+    position: relative; z-index: 1;
+    max-width: 660px; margin: 0 auto; padding: 20px;
+  }
+
+  /* 头部 */
+  .header {
+    text-align: center; padding: 44px 20px 30px;
+  }
+  .header .icon-row {
+    font-size: 40px; margin-bottom: 8px;
+    display: flex; justify-content: center; gap: 16px;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, #b8a06e, #d4c098, #a08850);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+  }
+  .header .subtitle {
+    font-size: 0.85rem; color: var(--text-dim);
+    margin-top: 6px; letter-spacing: 2px;
+  }
+
+  /* 卡片 */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 34px 30px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+
+  /* 进度条 */
+  .progress-wrap {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 26px;
+  }
+  .progress-bar {
+    flex: 1; height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--green), var(--gold-light));
+    transition: width 0.5s ease;
+  }
+  .progress-num {
+    font-size: 0.75rem; color: var(--text-dim);
+    min-width: 36px; text-align: right; font-variant-numeric: tabular-nums;
+  }
+
+  /* 题目 */
+  .question-wrap { display: none; }
+  .question-wrap.active { display: block; animation: slideUp 0.4s ease; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .q-label {
+    font-size: 0.72rem; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 8px;
+  }
+  .q-text {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.2rem; font-weight: 600;
+    color: #dce4dc; margin-bottom: 26px;
+    line-height: 1.7;
+  }
+
+  /* 选项 */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px 18px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(150,180,160,0.12);
+    border-radius: 12px;
+    color: #b0beb4; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.3s ease;
+    text-align: left; font-family: inherit;
+  }
+  .opt-btn:hover {
+    background: rgba(90,143,123,0.08);
+    border-color: rgba(90,143,123,0.35);
+    color: #d0dcd0; transform: translateX(3px);
+  }
+  .opt-btn.selected {
+    background: rgba(90,143,123,0.12);
+    border-color: var(--green);
+    color: var(--green-light);
+    box-shadow: 0 0 18px rgba(90,143,123,0.1);
+  }
+  .opt-icon { font-size: 1.3rem; width: 32px; text-align: center; flex-shrink: 0; }
+
+  /* 按钮 */
+  .btn-row { display: flex; gap: 12px; margin-top: 26px; justify-content: center; }
+  .btn {
+    padding: 11px 30px; border-radius: 26px;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.3s ease;
+    font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-prev {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .btn-prev:hover { border-color: var(--gold); color: var(--gold-light); }
+  .btn-next {
+    background: linear-gradient(135deg, #3a6b55, #5a8f7b);
+    color: #e8f0e8;
+    box-shadow: 0 3px 16px rgba(90,143,123,0.2);
+  }
+  .btn-next:hover {
+    box-shadow: 0 5px 24px rgba(90,143,123,0.35);
+    transform: translateY(-1px);
+  }
+  .btn-next:disabled {
+    opacity: 0.3; cursor: not-allowed;
+    box-shadow: none; transform: none;
+  }
+  .btn-submit {
+    background: linear-gradient(135deg, #6b553a, #b8a06e);
+    color: #1a1610;
+    font-size: 1rem; padding: 13px 40px;
+    box-shadow: 0 3px 20px rgba(184,160,110,0.25);
+  }
+  .btn-submit:hover {
+    box-shadow: 0 6px 30px rgba(184,160,110,0.4);
+    transform: translateY(-2px);
+  }
+  .btn-submit:disabled {
+    opacity: 0.3; cursor: not-allowed;
+    box-shadow: none; transform: none;
+  }
+
+  /* ===== 结果页 ===== */
+  .result-wrap { display: none; }
+  .result-wrap.show { display: block; animation: slideUp 0.6s ease; }
+
+  .result-hero {
+    text-align: center; padding: 24px 0 10px;
+  }
+  .result-emoji {
+    font-size: 72px; display: block;
+    animation: popIn 0.7s ease;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.12) rotate(3deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .result-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.8rem; font-weight: 900; margin-top: 10px;
+  }
+  .result-subtitle {
+    font-size: 0.9rem; color: var(--text-dim);
+    margin-top: 4px; letter-spacing: 2px;
+  }
+
+  /* 目的地推荐卡片 */
+  .dest-card {
+    background: rgba(90,143,123,0.06);
+    border: 1px solid rgba(90,143,123,0.15);
+    border-radius: 14px; padding: 18px; margin-bottom: 12px;
+    display: flex; gap: 14px; align-items: flex-start;
+    transition: all 0.3s ease;
+  }
+  .dest-card:hover {
+    background: rgba(90,143,123,0.1);
+    border-color: rgba(90,143,123,0.3);
+  }
+  .dest-rank {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.4rem; font-weight: 900;
+    color: var(--gold); min-width: 36px;
+    text-align: center; padding-top: 2px;
+  }
+  .dest-info { flex: 1; }
+  .dest-name {
+    font-size: 1.05rem; font-weight: 700;
+    color: #dce4dc; margin-bottom: 4px;
+  }
+  .dest-meta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 0.78rem; color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .dest-meta span { display: flex; align-items: center; gap: 4px; }
+  .dest-desc {
+    font-size: 0.85rem; color: #8a9a8e;
+    line-height: 1.6;
+  }
+  .dest-tag {
+    display: inline-block;
+    padding: 2px 10px; border-radius: 10px;
+    font-size: 0.7rem; margin-top: 6px;
+    background: rgba(90,143,123,0.15);
+    color: var(--green-light);
+  }
+
+  .section-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.05rem; color: var(--gold);
+    margin: 24px 0 14px; letter-spacing: 2px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(150,180,160,0.1);
+  }
+
+  /* 人格标签 */
+  .persona-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px; border-radius: 20px;
+    background: rgba(90,143,123,0.1);
+    border: 1px solid rgba(90,143,123,0.2);
+    font-size: 0.85rem; color: var(--green-light);
+    margin-bottom: 16px;
+  }
+
+  .btn-restart {
+    background: transparent;
+    border: 1px solid rgba(184,160,110,0.35);
+    color: var(--gold); padding: 10px 26px;
+    border-radius: 26px; font-size: 0.9rem;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.3s ease;
+  }
+  .btn-restart:hover { background: rgba(184,160,110,0.1); }
+
+  /* 加载 */
+  .loading-overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(5,12,10,0.9);
+    z-index: 100;
+    justify-content: center; align-items: center;
+    flex-direction: column;
+  }
+  .loading-overlay.show { display: flex; }
+  .loading-spinner {
+    width: 50px; height: 50px;
+    border: 3px solid rgba(90,143,123,0.2);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    margin-top: 18px; color: var(--text-dim);
+    letter-spacing: 3px; font-size: 0.85rem;
+  }
+
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.5rem; }
+    .card { padding: 22px 16px; }
+    .q-text { font-size: 1.05rem; }
+    .opt-btn { padding: 12px 14px; font-size: 0.85rem; }
+    .result-emoji { font-size: 56px; }
+    .result-title { font-size: 1.4rem; }
+    .dest-card { flex-direction: column; gap: 6px; }
+    .dest-rank { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="landscape"></div>
+<div class="particles" id="particles"></div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">正在为你规划旅程...</div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="icon-row">🏯 🌊 ⛰️ 🍵</div>
+    <h1>杭州 · 去哪儿玩</h1>
+    <p class="subtitle">—— 10 道题，发现你的旅行人格与专属目的地 ——</p>
+  </div>
+
+  <!-- 题目卡片 -->
+  <div class="card" id="questionCard">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-num" id="progressNum">1/10</div>
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="card result-wrap" id="resultCard">
+    <div class="result-hero">
+      <span class="result-emoji" id="resultEmoji"></span>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-subtitle" id="resultSubtitle"></div>
+    </div>
+    <div class="persona-badge" id="personaBadge"></div>
+
+    <div class="section-title">🎯 首选目的地</div>
+    <div id="primaryDest"></div>
+
+    <div class="section-title">📍 更多推荐</div>
+    <div id="moreDests"></div>
+
+    <div class="section-title">💡 出行贴士</div>
+    <div id="travelTips"></div>
+
+    <div style="text-align:center;margin-top:24px;">
+      <button class="btn-restart" onclick="restartTest()">⟳ 重新测试</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 题目数据
+// ==========================================
+const questions = [
+  {
+    id: 1,
+    text: '周末早上醒来，你理想的一天是怎么开始的？',
+    options: [
+      { text: '泡一杯龙井，在阳台或院子里静静发呆', value: 'zen', icon: '🍵' },
+      { text: '背上相机出门，寻找城市里没去过的小巷', value: 'explore', icon: '📷' },
+      { text: '约上朋友，去热闹的地方吃一顿 brunch', value: 'social', icon: '🥂' },
+      { text: '穿上运动鞋，去山里或湖边跑一圈', value: 'active', icon: '🏃' },
+      { text: '带上孩子/家人，去一个能玩一整天的地方', value: 'family', icon: '👨‍👩‍👧' }
+    ]
+  },
+  {
+    id: 2,
+    text: '说到"放松"，你脑子里浮现的画面是？',
+    options: [
+      { text: '坐在寺庙的台阶上听钟声，风吹过竹林', value: 'zen', icon: '🎋' },
+      { text: '在一片开阔的水域边，看夕阳慢慢沉下去', value: 'nature', icon: '🌅' },
+      { text: '热闹的夜市或步行街，边逛边吃', value: 'social', icon: '🍢' },
+      { text: '躺在草地上，什么都不想，闭眼晒太阳', value: 'lazy', icon: '☀️' },
+      { text: '在咖啡馆或书店里泡一个下午', value: 'culture', icon: '📚' }
+    ]
+  },
+  {
+    id: 3,
+    text: '如果让你选一种"交通工具"来探索杭州，你会选？',
+    options: [
+      { text: '共享单车——慢慢骑，随时停下来拍照', value: 'explore', icon: '🚲' },
+      { text: '自驾——方向盘在手，想去哪去哪', value: 'active', icon: '🚗' },
+      { text: '步行——用双脚丈量每一寸风景', value: 'zen', icon: '🚶' },
+      { text: '地铁+公交——方便省心，不用找车位', value: 'lazy', icon: '🚇' },
+      { text: '包车/打车——舒适第一，精力留给目的地', value: 'family', icon: '🚕' }
+    ]
+  },
+  {
+    id: 4,
+    text: '以下哪种"气味"最能让你感到快乐？',
+    options: [
+      { text: '雨后山林里的泥土和青草味', value: 'nature', icon: '🌿' },
+      { text: '寺庙里的檀香和古木味', value: 'zen', icon: '🪔' },
+      { text: '老街巷里飘来的炒茶、糕点香气', value: 'culture', icon: '🥮' },
+      { text: '湖边吹来的带着水汽的清风', value: 'lazy', icon: '💨' },
+      { text: '露营篝火的烟火气和烧烤香', value: 'active', icon: '🔥' }
+    ]
+  },
+  {
+    id: 5,
+    text: '旅行中，你最不能忍受的是什么？',
+    options: [
+      { text: '人山人海，排队排到怀疑人生', value: 'zen', icon: '😤' },
+      { text: '商业化太严重，到处是千篇一律的店铺', value: 'nature', icon: '🏪' },
+      { text: '太偏僻，吃住都不方便', value: 'social', icon: '🍽️' },
+      { text: '行程太赶，一直在赶路没时间感受', value: 'lazy', icon: '⏰' },
+      { text: '没信号没WiFi，无法分享美好瞬间', value: 'culture', icon: '📶' }
+    ]
+  },
+  {
+    id: 6,
+    text: '你更喜欢什么样的"水"？',
+    options: [
+      { text: '西湖那种——温柔、有故事、适合慢慢逛', value: 'culture', icon: '🌊' },
+      { text: '千岛湖那种——开阔、干净、可以下水玩', value: 'active', icon: '🏊' },
+      { text: '山间溪流那种——清凉、野趣、适合溯溪', value: 'nature', icon: '💦' },
+      { text: '运河那种——有生活气息、两岸是人家', value: 'social', icon: '🚢' },
+      { text: '茶园边的小池塘——安静、倒映着天光云影', value: 'zen', icon: '🪷' }
+    ]
+  },
+  {
+    id: 7,
+    text: '一顿完美的旅行餐是什么样的？',
+    options: [
+      { text: '精致的杭帮菜，西湖醋鱼、龙井虾仁安排上', value: 'culture', icon: '🐟' },
+      { text: '路边苍蝇馆子，地道片儿川+小笼包', value: 'explore', icon: '🥟' },
+      { text: '自带食材，在山水间野餐或露营烧烤', value: 'nature', icon: '🧺' },
+      { text: '去网红餐厅打卡，拍照好看比好吃更重要', value: 'social', icon: '📸' },
+      { text: '民宿老板做的家常菜，吃完像回到小时候', value: 'lazy', icon: '🍚' }
+    ]
+  },
+  {
+    id: 8,
+    text: '如果要在户外过一晚，你选哪个？',
+    options: [
+      { text: '莫干山的轻奢民宿，有泳池有星空', value: 'social', icon: '🏊' },
+      { text: '西湖边的老牌酒店，推窗就是湖景', value: 'culture', icon: '🏨' },
+      { text: '山里搭帐篷，生篝火看银河', value: 'active', icon: '⛺' },
+      { text: '古镇里的民宿，枕水而眠', value: 'zen', icon: '🏮' },
+      { text: '无所谓住哪，干净就行——反正白天都在外面浪', value: 'explore', icon: '🎒' }
+    ]
+  },
+  {
+    id: 9,
+    text: '你会因为什么对一个地方"念念不忘"？',
+    options: [
+      { text: '在那里拍出了一张年度最佳照片', value: 'social', icon: '🏆' },
+      { text: '某个瞬间的宁静——觉得整个世界都慢下来了', value: 'zen', icon: '✨' },
+      { text: '征服了一座山或走完了一条很长的路', value: 'active', icon: '⛰️' },
+      { text: '发现了一个只有本地人才知道的秘密角落', value: 'explore', icon: '🗝️' },
+      { text: '大自然本身的震撼——日出、云海、萤火虫', value: 'nature', icon: '🌄' }
+    ]
+  },
+  {
+    id: 10,
+    text: '这趟出行，你更看重什么？',
+    options: [
+      { text: '治愈感——回去之后像充了一次电', value: 'zen', icon: '🔋' },
+      { text: '出片率——朋友圈九宫格必须安排明白', value: 'social', icon: '📱' },
+      { text: '体验感——做了一些平时不会做的事', value: 'active', icon: '🎯' },
+      { text: '深度——真正了解了这个地方的历史和故事', value: 'culture', icon: '📖' },
+      { text: '陪伴——和家人朋友在一起的时光最重要', value: 'family', icon: '💛' }
+    ]
+  }
+];
+
+// ==========================================
+// 旅行人格 → 目的地映射
+// ==========================================
+const personaMap = {
+  zen: {
+    name: '隐逸修行者',
+    emoji: '🧘',
+    subtitle: '你追寻内心的宁静，向往与世无争的片刻',
+    badge: '禅意 · 慢旅行 · 避世',
+    primary: {
+      name: '灵隐寺 & 法喜寺',
+      location: '杭州市西湖区',
+      distance: '市区内',
+      time: '半天~一天',
+      desc: '清晨入古寺，初日照高林。先去灵隐寺上香听钟，再到上天竺法喜寺求一串网红御守。飞来峰的石窟造像值得细品，永福禅寺的茶园小坐片刻，一整天都不会腻。',
+      tag: '禅修',
+      icon: '🛕'
+    },
+    more: [
+      {
+        rank: '2', name: '径山寺', location: '杭州市余杭区', distance: '约50km', time: '一天',
+        desc: '日本茶道的发源地，比灵隐更清幽。盘山公路一路开到山顶，千年古刹藏在云雾里。寺里的素斋口碑极好，记得提前预约。',
+        tag: '深山古刹', icon: '⛩️'
+      },
+      {
+        rank: '3', name: '梅家坞 & 龙井村', location: '杭州市西湖区', distance: '市区内', time: '半天',
+        desc: '在茶山间走走停停，找一家茶农家喝杯明前龙井。四五月采茶季去最佳，满山茶香。找个茶馆坐一下午，看山看云，时间仿佛停止。',
+        tag: '茶山漫步', icon: '🍃'
+      }
+    ],
+    tips: [
+      '灵隐寺建议早上7:30开门就去，避开旅行团',
+      '法喜寺的网红机位在寺外黄墙处，下午光线最好',
+      '径山寺自驾注意山路弯道，新手建议拼车',
+      '茶村周末人多，工作日去体验感翻倍'
+    ]
+  },
+  nature: {
+    name: '山水朝圣者',
+    emoji: '🏔️',
+    subtitle: '大自然是你永恒的精神故乡',
+    badge: '户外 · 自然 · 野趣',
+    primary: {
+      name: '桐庐 · 大奇山 & 石舍村',
+      location: '杭州市桐庐县',
+      distance: '约90km',
+      time: '一天',
+      desc: '大奇山有"小九寨"之称，溪水蓝得不像话。下午去石舍村，400年古村藏在山谷里，芦茨溪清澈见底，夏天可以溯溪玩水。马岭古道精华段12km平缓竹林路，新手也友好。',
+      tag: '山水秘境',
+      icon: '🏞️'
+    },
+    more: [
+      {
+        rank: '2', name: '临安 · 浙西大峡谷', location: '杭州市临安区', distance: '约120km', time: '一天',
+        desc: '峡谷溯溪主题，夏天比市区低6-8度。瀑布群壮观，植被覆盖率极高，适合年轻人和亲子家庭。沿途有休息区和餐饮点，配套完善。',
+        tag: '峡谷溯溪', icon: '💧'
+      },
+      {
+        rank: '3', name: '西溪湿地', location: '杭州市西湖区', distance: '市区内', time: '半天',
+        desc: '城市里的绿肺，坐摇橹船穿行芦苇荡。秋天芦花如雪，春天百花盛开。推荐从周家村入口进，人少景美，还能看到各种水鸟。',
+        tag: '城市湿地', icon: '🛶'
+      }
+    ],
+    tips: [
+      '大奇山建议穿防滑鞋，部分路段湿滑',
+      '溯溪带一套换洗衣物和防水袋',
+      '西溪湿地周二到周四人最少',
+      '桐庐和临安建议自驾，沿途风景也是享受'
+    ]
+  },
+  culture: {
+    name: '人文拾光者',
+    emoji: '📜',
+    subtitle: '你爱的是风景背后的故事和岁月',
+    badge: '人文 · 历史 · 深度',
+    primary: {
+      name: '西湖环湖一日游',
+      location: '杭州市西湖区',
+      distance: '市区内',
+      time: '一天',
+      desc: '从断桥出发，走白堤→孤山（西泠印社+省博）→苏堤→花港观鱼→雷峰塔。傍晚在长桥公园看雷峰夕照，晚上去湖滨步行街。这条路线几乎囊括了西湖最精华的人文景观。',
+      tag: '经典环湖',
+      icon: '🏯'
+    },
+    more: [
+      {
+        rank: '2', name: '绍兴古城', location: '绍兴市越城区', distance: '约60km', time: '一天',
+        desc: '高铁19分钟直达。鲁迅故里、书圣故里、仓桥直街，每一块青石板都有故事。坐一次乌篷船，喝一杯黄酒奶茶，吃一块臭豆腐，感受江南最原汁原味的文脉。',
+        tag: '水乡文脉', icon: '🏛️'
+      },
+      {
+        rank: '3', name: '良渚古城遗址 & 版本馆', location: '杭州市余杭区', distance: '市区内', time: '半天~一天',
+        desc: '五千年文明的实证。良渚博物院建筑设计本身就是艺术品，杭州国家版本馆更是出片圣地。适合对历史和建筑感兴趣的你。',
+        tag: '文明溯源', icon: '🏺'
+      }
+    ],
+    tips: [
+      '西湖环湖全程约12km，可以骑行+步行结合',
+      '绍兴建议高铁出行，市内景点步行可达',
+      '良渚需要提前预约，尤其是版本馆很抢手',
+      '雷峰塔门票40元，傍晚登塔景色最佳'
+    ]
+  },
+  social: {
+    name: '城市漫游家',
+    emoji: '🎭',
+    subtitle: '热闹是必须的，美食和出片缺一不可',
+    badge: '社交 · 美食 · 潮流',
+    primary: {
+      name: '小河直街 & 桥西历史街区',
+      location: '杭州市拱墅区',
+      distance: '市区内',
+      time: '半天~一天',
+      desc: '运河边的文艺街区，咖啡馆、手作店、独立书店密集。下午茶+拍照+逛博物馆（刀剪剑/伞/扇博物馆都在这里），晚上找一家运河边的餐厅，看船来船往，惬意到不行。',
+      tag: '文艺街区',
+      icon: '☕'
+    },
+    more: [
+      {
+        rank: '2', name: '莫干山', location: '湖州市德清县', distance: '约60km', time: '一天~两天',
+        desc: '中国民宿的发源地，各种设计感爆棚的民宿拍照停不下来。庾村市集、彩虹步道、义远有机农场……文艺青年和拍照达人的天堂。自驾1小时即达。',
+        tag: '民宿圣地', icon: '🏡'
+      },
+      {
+        rank: '3', name: '湖滨银泰 & 南山路', location: '杭州市上城区', distance: '市区内', time: '半天',
+        desc: '杭州最潮的商业区，湖滨步行街连着西湖。白天逛吃逛吃，晚上西湖音乐喷泉（19:00/20:00），再去南山路的酒吧坐坐。一站式吃喝玩乐。',
+        tag: '潮流中心', icon: '🛍️'
+      }
+    ],
+    tips: [
+      '小河直街周末有市集，手作和美食都有',
+      '莫干山民宿周末很抢手，建议提前一周订',
+      '南山路晚上氛围最好，适合约会',
+      '湖滨音乐喷泉提前15分钟占位'
+    ]
+  },
+  active: {
+    name: '野趣探险家',
+    emoji: '🧗',
+    subtitle: '不动起来就浑身不舒服，挑战是你的快乐源泉',
+    badge: '运动 · 挑战 · 户外',
+    primary: {
+      name: '桐庐 · 马岭天观冒险乐园',
+      location: '杭州市桐庐县',
+      distance: '约100km',
+      time: '一天',
+      desc: '海拔落差300米+的山地冒险乐园，七大核心项目：高空滑索、悬崖秋千、飞拉达攀岩、玻璃栈道……每一个都让肾上腺素狂飙。是目前杭州周边规模最大的户外冒险乐园。',
+      tag: '极限挑战',
+      icon: '🪂'
+    },
+    more: [
+      {
+        rank: '2', name: '安吉 · 云上草原', location: '湖州市安吉县', distance: '约80km', time: '一天',
+        desc: '海拔1168米的高山草原，悬崖秋千、彩虹滑草、玻璃廊桥、星空露营……项目超多。冬天还能滑雪，是四季皆宜的户外天堂。',
+        tag: '高山乐园', icon: '🎢'
+      },
+      {
+        rank: '3', name: '西湖群山徒步', location: '杭州市西湖区', distance: '市区内', time: '半天~一天',
+        desc: '经典路线：老和山→北高峰→美人峰→十里琅珰→五云山。全程约15km，爬升800m左右，俯瞰西湖全景。不想太累就走十里琅珰精华段，2小时轻松搞定。',
+        tag: '山脊徒步', icon: '🥾'
+      }
+    ],
+    tips: [
+      '冒险乐园项目有体重和身高限制，提前确认',
+      '安吉建议自驾，公共交通不太方便',
+      '徒步带够水，山上补给点不多',
+      '十里琅珰春秋两季最美，夏天注意防晒'
+    ]
+  },
+  explore: {
+    name: '城市探索者',
+    emoji: '🗺️',
+    subtitle: '你的乐趣在于发现，别人的攻略只是参考',
+    badge: '探索 · 猎奇 · 小众',
+    primary: {
+      name: '馒头山社区 & 凤凰御元',
+      location: '杭州市上城区',
+      distance: '市区内',
+      time: '半天',
+      desc: '杭州最有老底子味道的社区，窄巷子、老房子、晒在路边的棉被。凤凰御元是旧厂房改造的文创园，画廊、工作室、咖啡馆藏在其中。这一带几乎没有游客，全是本地人的日常。',
+      tag: '老城秘境',
+      icon: '🏘️'
+    },
+    more: [
+      {
+        rank: '2', name: '塘栖古镇', location: '杭州市临平区', distance: '约30km', time: '半天',
+        desc: '比乌镇更原生态的运河古镇。下午4点后去最好，旅行团散了，灯笼亮起来才是真江南。粢毛肉圆、细沙羊尾、塘栖板鸭——老底子味道，本地人周末也爱去。',
+        tag: '运河古镇', icon: '🏮'
+      },
+      {
+        rank: '3', name: '富阳 · 东梓关村', location: '杭州市富阳区', distance: '约50km', time: '半天',
+        desc: '吴冠中画里的江南民居——新杭派民居的典范。白墙黑瓦，像从水墨画里走出来的。旁边就是富春江，人少景美，随便拍都出片。',
+        tag: '建筑美学', icon: '🏠'
+      }
+    ],
+    tips: [
+      '馒头山适合慢慢逛，不要赶时间',
+      '塘栖建议坐地铁9号线到临平南站转公交',
+      '东梓关村公共交通不便，建议自驾',
+      '这些都是免费景点，性价比超高'
+    ]
+  },
+  lazy: {
+    name: '慵懒度假派',
+    emoji: '🌴',
+    subtitle: '旅行不是赶路，是换个地方舒舒服服地待着',
+    badge: '休闲 · 度假 · 慢生活',
+    primary: {
+      name: '千岛湖',
+      location: '杭州市淳安县',
+      distance: '约130km',
+      time: '一天~两天',
+      desc: '1078个岛屿散落在碧绿的湖水中，找一家湖景酒店或民宿，早上被湖光山色唤醒。白天骑环湖绿道，傍晚在湖边吃鱼头，晚上看星空。节奏慢到你不想回杭州。',
+      tag: '湖光山色',
+      icon: '🏝️'
+    },
+    more: [
+      {
+        rank: '2', name: '西湖边的慵懒一日', location: '杭州市西湖区', distance: '市区内', time: '一天',
+        desc: '不赶景点，就在北山街找个湖边的茶馆或咖啡馆，看湖看山看人。下午去郭庄或蒋庄坐着发呆，傍晚去孤山看日落。这才是杭州本地人的西湖打开方式。',
+        tag: '湖畔发呆', icon: '😌'
+      },
+      {
+        rank: '3', name: '安吉 · 竹海度假', location: '湖州市安吉县', distance: '约80km', time: '一天',
+        desc: '中国大竹海和安吉竹博园，满眼翠绿。找一家竹林里的民宿，泡一壶安吉白茶，听风吹竹叶的声音。什么都不用想，让竹子替你呼吸。',
+        tag: '竹海疗愈', icon: '🎋'
+      }
+    ],
+    tips: [
+      '千岛湖建议住一晚，一天来回太赶',
+      '千岛湖鱼头一定要吃，推荐不仔客等本地馆子',
+      '西湖边茶馆推荐湖畔居和青藤茶馆',
+      '安吉白茶清明前后最好，可以带一些回去'
+    ]
+  },
+  family: {
+    name: '合家欢领队',
+    emoji: '👨‍👩‍👧‍👦',
+    subtitle: '一家人在一起，去哪里都是最好的风景',
+    badge: '亲子 · 家庭 · 温馨',
+    primary: {
+      name: '杭州野生动物世界 & 周边',
+      location: '杭州市富阳区',
+      distance: '约40km',
+      time: '一天',
+      desc: '华东最大的野生动物园之一，可以自驾进入猛兽区。小朋友可以喂长颈鹿、骑小马。附近还有富春桃源和龙门古镇，一家老小都能找到乐趣。',
+      tag: '亲子乐园',
+      icon: '🦁'
+    },
+    more: [
+      {
+        rank: '2', name: '西湖亲子线', location: '杭州市西湖区', distance: '市区内', time: '半天~一天',
+        desc: '杭州动物园→少年儿童公园→苏堤骑行→花港观鱼喂鱼。这条线全程不累，小朋友喜欢。还可以坐西湖游船去三潭印月，轻松又好玩。',
+        tag: '轻松遛娃', icon: '👶'
+      },
+      {
+        rank: '3', name: '安吉 · Hello Kitty 乐园', location: '湖州市安吉县', distance: '约80km', time: '一天',
+        desc: '中国首座Hello Kitty主题乐园，粉红色的世界。六大主题区域，花车巡游、互动表演，小女孩的天堂。大人也不会无聊，拍照超出片。',
+        tag: '主题乐园', icon: '🎀'
+      }
+    ],
+    tips: [
+      '野生动物世界建议早上9点入园，动物最活跃',
+      '西湖亲子线推荐工作日去，周末人太多',
+      'Hello Kitty乐园建议提前网上购票有优惠',
+      '带娃出行多带零食和水，随时补给'
+    ]
+  }
+};
+
+// ==========================================
+// 状态管理
+// ==========================================
+let currentQ = 0;
+let answers = {};
+let selectedOpt = null;
+
+// ==========================================
+// 粒子背景
+// ==========================================
+function initParticles() {
+  const c = document.getElementById('particles');
+  const colors = ['#5a8f7b', '#7ab8a0', '#b8a06e', '#8a9a8e', '#6a7a72'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    const s = Math.random() * 3 + 1;
+    p.style.width = p.style.height = s + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDuration = (Math.random() * 14 + 10) + 's';
+    p.style.animationDelay = (Math.random() * 12) + 's';
+    c.appendChild(p);
+  }
+}
+
+// ==========================================
+// 渲染题目
+// ==========================================
+function renderQuestion() {
+  const q = questions[currentQ];
+  const container = document.getElementById('questionsContainer');
+  const btnRow = document.getElementById('btnRow');
+  const progressFill = document.getElementById('progressFill');
+  const progressNum = document.getElementById('progressNum');
+
+  selectedOpt = answers[q.id] !== undefined ? answers[q.id] : null;
+
+  container.innerHTML = `
+    <div class="question-wrap active">
+      <div class="q-label">第 ${q.id} 问</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <button class="opt-btn ${selectedOpt === i ? 'selected' : ''}"
+                  onclick="selectOption(${i})" data-idx="${i}">
+            <span class="opt-icon">${opt.icon}</span>
+            <span>${opt.text}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  progressFill.style.width = ((currentQ + 1) / questions.length * 100) + '%';
+  progressNum.textContent = `${currentQ + 1}/${questions.length}`;
+
+  const isLast = currentQ === questions.length - 1;
+  btnRow.innerHTML = `
+    ${currentQ > 0 ? '<button class="btn btn-prev" onclick="prevQuestion()">← 上一题</button>' : ''}
+    ${isLast
+      ? `<button class="btn btn-submit" onclick="submitTest()" ${selectedOpt === null ? 'disabled' : ''}>✦ 查看我的目的地 ✦</button>`
+      : `<button class="btn btn-next" onclick="nextQuestion()" ${selectedOpt === null ? 'disabled' : ''}>下一题 →</button>`
+    }
+  `;
+}
+
+function selectOption(idx) {
+  selectedOpt = idx;
+  answers[questions[currentQ].id] = idx;
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.idx) === idx);
+  });
+  const btn = document.querySelector('.btn-next, .btn-submit');
+  if (btn) btn.disabled = false;
+}
+
+function nextQuestion() {
+  if (selectedOpt === null) return;
+  if (currentQ < questions.length - 1) {
+    currentQ++;
+    renderQuestion();
+    document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    currentQ--;
+    renderQuestion();
+    document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// ==========================================
+// 计算结果
+// ==========================================
+function calculateResult() {
+  const scores = { zen: 0, nature: 0, culture: 0, social: 0, active: 0, explore: 0, lazy: 0, family: 0 };
+  for (const [qId, optIdx] of Object.entries(answers)) {
+    const q = questions.find(qq => qq.id === parseInt(qId));
+    if (q && q.options[optIdx]) {
+      scores[q.options[optIdx].value]++;
+    }
+  }
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  return { type: sorted[0][0], scores };
+}
+
+// ==========================================
+// 渲染结果
+// ==========================================
+function renderResult(result) {
+  const persona = personaMap[result.type];
+  document.getElementById('questionCard').style.display = 'none';
+
+  const rc = document.getElementById('resultCard');
+  rc.classList.add('show');
+
+  document.getElementById('resultEmoji').textContent = persona.emoji;
+  document.getElementById('resultTitle').textContent = persona.name;
+  document.getElementById('resultSubtitle').textContent = persona.subtitle;
+  document.getElementById('personaBadge').textContent = persona.badge;
+
+  // 首选目的地
+  const p = persona.primary;
+  document.getElementById('primaryDest').innerHTML = `
+    <div class="dest-card">
+      <div class="dest-rank">🥇</div>
+      <div class="dest-info">
+        <div class="dest-name">${p.icon} ${p.name}</div>
+        <div class="dest-meta">
+          <span>📍 ${p.location}</span><span>📏 ${p.distance}</span><span>⏱️ ${p.time}</span>
+        </div>
+        <div class="dest-desc">${p.desc}</div>
+        <span class="dest-tag">${p.tag}</span>
+      </div>
+    </div>
+  `;
+
+  // 更多推荐
+  document.getElementById('moreDests').innerHTML = persona.more.map(d => `
+    <div class="dest-card">
+      <div class="dest-rank">${d.rank === '2' ? '🥈' : '🥉'}</div>
+      <div class="dest-info">
+        <div class="dest-name">${d.icon} ${d.name}</div>
+        <div class="dest-meta">
+          <span>📍 ${d.location}</span><span>📏 ${d.distance}</span><span>⏱️ ${d.time}</span>
+        </div>
+        <div class="dest-desc">${d.desc}</div>
+        <span class="dest-tag">${d.tag}</span>
+      </div>
+    </div>
+  `).join('');
+
+  // 出行贴士
+  document.getElementById('travelTips').innerHTML = persona.tips.map(t =>
+    `<div style="padding:6px 0;font-size:0.85rem;color:#8a9a8e;">💡 ${t}</div>`
+  ).join('');
+
+  rc.scrollIntoView({ behavior: 'smooth' });
+}
+
+function submitTest() {
+  if (selectedOpt === null) return;
+  answers[questions[currentQ].id] = selectedOpt;
+
+  if (Object.keys(answers).length < questions.length) {
+    alert('请回答完所有题目再查看结果哦~');
+    return;
+  }
+
+  document.getElementById('loadingOverlay').classList.add('show');
+  setTimeout(() => {
+    const result = calculateResult();
+    document.getElementById('loadingOverlay').classList.remove('show');
+    renderResult(result);
+  }, 1500);
+}
+
+function restartTest() {
+  currentQ = 0;
+  answers = {};
+  selectedOpt = null;
+  document.getElementById('questionCard').style.display = '';
+  document.getElementById('resultCard').classList.remove('show');
+  renderQuestion();
+  document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ==========================================
+// 启动
+// ==========================================
+initParticles();
+renderQuestion();
+</script>
+</body>
+</html>

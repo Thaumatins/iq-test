@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>智商测试 · 专业版</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0d1117;
+    --card-bg: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --dim: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --danger: #f85149;
+    --warn: #d2991d;
+    --purple: #bc8cff;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(88,166,255,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(188,140,255,0.04) 0%, transparent 50%);
+  }
+
+  .container {
+    width: 100%; max-width: 680px;
+    padding: 16px;
+  }
+
+  /* ---- 头部 ---- */
+  .header {
+    text-align: center; padding: 32px 16px 20px;
+  }
+  .header .badge {
+    display: inline-block;
+    padding: 4px 14px; border-radius: 12px;
+    background: rgba(88,166,255,0.12);
+    border: 1px solid rgba(88,166,255,0.2);
+    color: var(--accent);
+    font-size: 0.72rem; letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.8rem; font-weight: 900;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+  }
+  .header p {
+    font-size: 0.82rem; color: var(--dim);
+    margin-top: 6px; letter-spacing: 1px;
+  }
+
+  /* ---- 卡片 ---- */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px 24px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  /* ---- 进度条 ---- */
+  .progress-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .progress-track {
+    flex: 1; height: 5px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    transition: width 0.5s ease;
+  }
+  .progress-num {
+    font-size: 0.75rem; color: var(--dim);
+    min-width: 42px; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- 计时器 ---- */
+  .timer {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.8rem; color: var(--dim);
+    margin-bottom: 14px;
+  }
+  .timer.warning { color: var(--warn); }
+  .timer.danger { color: var(--danger); }
+  .timer-icon { font-size: 0.9rem; }
+
+  /* ---- 题目 ---- */
+  .question-wrap { display: none; }
+  .question-wrap.active { display: block; animation: slideIn 0.35s ease; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-domain {
+    display: inline-block;
+    padding: 2px 10px; border-radius: 8px;
+    font-size: 0.65rem; letter-spacing: 2px;
+    margin-bottom: 10px;
+    background: rgba(88,166,255,0.08);
+    color: var(--accent);
+  }
+  .q-text {
+    font-size: 1.05rem; font-weight: 500;
+    color: #e6edf3; margin-bottom: 22px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+  }
+
+  /* 选项 */
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 13px 16px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #b1bac4; font-size: 0.88rem;
+    cursor: pointer; transition: all 0.25s ease;
+    text-align: left; font-family: inherit;
+  }
+  .opt-btn:hover {
+    background: rgba(88,166,255,0.06);
+    border-color: rgba(88,166,255,0.3);
+    color: #d0d7e0;
+  }
+  .opt-btn.selected {
+    background: rgba(88,166,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .opt-letter {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--dim); flex-shrink: 0;
+  }
+  .opt-btn.selected .opt-letter {
+    background: var(--accent); color: #fff;
+  }
+
+  /* 按钮 */
+  .btn-row { display: flex; gap: 10px; margin-top: 22px; justify-content: center; }
+  .btn {
+    padding: 10px 28px; border-radius: 22px;
+    font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.3s ease;
+    font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-prev {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+  }
+  .btn-prev:hover { border-color: #58a6ff80; color: var(--accent); }
+  .btn-next {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-next:hover { background: #4090e0; }
+  .btn-next:disabled {
+    opacity: 0.35; cursor: not-allowed;
+  }
+  .btn-submit {
+    background: linear-gradient(135deg, #3fb950, #2ea043);
+    color: #fff; font-size: 0.95rem; padding: 12px 40px;
+  }
+  .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-submit:disabled {
+    opacity: 0.35; cursor: not-allowed; transform: none;
+  }
+
+  /* ---- 说明卡片 ---- */
+  .intro-card .rule-list {
+    list-style: none; padding: 0;
+  }
+  .intro-card .rule-list li {
+    padding: 6px 0 6px 20px;
+    position: relative; font-size: 0.85rem;
+    color: var(--dim); line-height: 1.6;
+  }
+  .intro-card .rule-list li::before {
+    content: '▸'; position: absolute; left: 0;
+    color: var(--accent); font-size: 0.7rem; top: 8px;
+  }
+
+  /* ---- 结果页 ---- */
+  .result-wrap { display: none; }
+  .result-wrap.show { display: block; animation: slideIn 0.6s ease; }
+
+  .result-hero {
+    text-align: center; padding: 20px 0 8px;
+  }
+  .result-score {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 4rem; font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .result-label {
+    font-size: 0.8rem; color: var(--dim);
+    letter-spacing: 3px; margin-top: 4px;
+  }
+  .result-rank {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.3rem; font-weight: 700;
+    margin-top: 8px;
+  }
+  .result-time {
+    font-size: 0.78rem; color: var(--dim);
+    margin-top: 4px;
+  }
+
+  /* 分数条 */
+  .score-bar-wrap {
+    margin: 16px 0;
+  }
+  .score-bar-labels {
+    display: flex; justify-content: space-between;
+    font-size: 0.65rem; color: var(--dim);
+    margin-bottom: 4px;
+  }
+  .score-bar {
+    height: 8px; border-radius: 4px;
+    background: linear-gradient(90deg, #f85149, #d2991d 30%, #3fb950 55%, #58a6ff 75%, #bc8cff);
+    position: relative;
+  }
+  .score-marker {
+    position: absolute; top: -4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: white; border: 3px solid var(--accent);
+    transform: translateX(-50%);
+    box-shadow: 0 0 12px rgba(88,166,255,0.5);
+    transition: left 1.2s ease;
+  }
+
+  /* 维度细分 */
+  .dim-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin: 14px 0;
+  }
+  .dim-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 12px 14px;
+  }
+  .dim-name {
+    font-size: 0.72rem; color: var(--dim);
+    margin-bottom: 4px; letter-spacing: 1px;
+  }
+  .dim-score {
+    font-size: 1.1rem; font-weight: 700;
+  }
+  .dim-bar {
+    height: 3px; border-radius: 2px;
+    margin-top: 4px; transition: width 1s ease;
+  }
+
+  .section-title {
+    font-size: 0.85rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 2px;
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .desc-block {
+    background: rgba(88,166,255,0.03);
+    border: 1px solid rgba(88,166,255,0.08);
+    border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .desc-block p, .desc-block li {
+    font-size: 0.84rem; color: #a0aab4; line-height: 1.7;
+  }
+  .desc-block ul { list-style: none; padding: 0; }
+  .desc-block li { padding: 3px 0 3px 16px; position: relative; }
+  .desc-block li::before {
+    content: '•'; position: absolute; left: 0;
+    color: var(--accent);
+  }
+
+  .btn-restart {
+    display: block; margin: 20px auto 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim); padding: 9px 24px;
+    border-radius: 20px; font-size: 0.82rem;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.3s ease;
+  }
+  .btn-restart:hover {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(88,166,255,0.06);
+  }
+
+  /* ---- 免责声明 ---- */
+  .disclaimer {
+    text-align: center; padding: 16px;
+    font-size: 0.68rem; color: #484f58;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.4rem; }
+    .card { padding: 20px 14px; }
+    .q-text { font-size: 0.95rem; }
+    .opt-btn { padding: 11px 14px; font-size: 0.82rem; }
+    .result-score { font-size: 3rem; }
+    .dim-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 头部 -->
+  <div class="header">
+    <div class="badge">INTELLIGENCE QUOTIENT</div>
+    <h1>智商测试 · 专业版</h1>
+    <p>15 道题 · 多维评估 · 即时报告</p>
+  </div>
+
+  <!-- 说明卡片 -->
+  <div class="card intro-card" id="introCard">
+    <ul class="rule-list">
+      <li>本测试包含 <strong>15 道题</strong>，涵盖逻辑推理、数学运算、空间想象、语言理解和记忆力五大维度</li>
+      <li>每道题有 <strong>4 个选项</strong>，只有 1 个正确答案</li>
+      <li>答对得分，答错或超时不扣分（每题限时 60 秒）</li>
+      <li>参考瑞文标准推理测验（RSPM）和韦氏成人智力量表（WAIS-IV）设计</li>
+      <li>请在安静环境中独立完成，<strong>不要查阅资料</strong></li>
+    </ul>
+    <div style="text-align:center;margin-top:18px;">
+      <button class="btn btn-next" onclick="startTest()">开始测试</button>
+    </div>
+  </div>
+
+  <!-- 题目卡片 -->
+  <div class="card" id="questionCard" style="display:none;">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-num" id="progressNum">1/15</div>
+    </div>
+    <div class="timer" id="timer">
+      <span class="timer-icon">⏱</span>
+      <span id="timerText">60</span> 秒
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="card result-wrap" id="resultCard">
+    <div class="result-hero">
+      <div class="result-score" id="resultScore">--</div>
+      <div class="result-label">IQ 评估分数</div>
+      <div class="result-rank" id="resultRank"></div>
+      <div class="result-time" id="resultTime"></div>
+    </div>
+
+    <div class="score-bar-wrap">
+      <div class="score-bar-labels">
+        <span>55</span><span>70</span><span>85</span><span>100</span><span>115</span><span>130</span><span>145</span>
+      </div>
+      <div class="score-bar">
+        <div class="score-marker" id="scoreMarker" style="left:50%;"></div>
+      </div>
+    </div>
+
+    <div class="section-title">📊 维度得分</div>
+    <div class="dim-grid" id="dimGrid"></div>
+
+    <div class="section-title">🧠 智力剖析</div>
+    <div id="analysisBlock"></div>
+
+    <div class="section-title">💡 发展建议</div>
+    <div id="adviceBlock"></div>
+
+    <button class="btn-restart" onclick="restartTest()">⟳ 重新测试</button>
+  </div>
+
+  <!-- 免责声明 -->
+  <div class="disclaimer">
+    ⚠ 本测试仅供娱乐参考，不构成临床诊断依据。<br>
+    如需专业智商评估，请前往正规心理测量机构。
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 题目数据 —— 15题，5个维度各3题
+// ==========================================
+const questions = [
+  // ===== 逻辑推理 (3题) =====
+  {
+    id: 1, domain: '逻辑推理',
+    text: '如果所有的 A 都是 B，所有的 B 都是 C，那么以下哪项一定成立？',
+    options: [
+      '所有的 C 都是 A',
+      '所有的 A 都是 C',
+      '有些 C 不是 B',
+      '有些 A 不是 C'
+    ],
+    answer: 1,
+    explanation: '根据三段论传递律：若 A⊆B 且 B⊆C，则 A⊆C，即"所有的 A 都是 C"。'
+  },
+  {
+    id: 2, domain: '逻辑推理',
+    text: '甲说："乙在说谎。"\n乙说："丙在说谎。"\n丙说："甲和乙都在说谎。"\n\n如果只有一个人说真话，那么说真话的是谁？',
+    options: [
+      '甲',
+      '乙',
+      '丙',
+      '无法判断'
+    ],
+    answer: 1,
+    explanation: '假设甲真→乙假→丙真（矛盾）。假设乙真→丙假→甲真（矛盾）。假设丙真→甲假且乙假→甲假说明乙没说谎即乙真（矛盾）。实际上乙真时：乙真→丙假→"甲和乙都在说谎"为假，即并非(甲假且乙假)=甲真或乙真，乙已真故成立，且甲假→乙没说谎即乙真，一致。'
+  },
+  {
+    id: 3, domain: '逻辑推理',
+    text: '找规律：2, 3, 7, 16, 32, ( ? )\n问号处应该是？',
+    options: [
+      '49',
+      '51',
+      '57',
+      '63'
+    ],
+    answer: 2,
+    explanation: '差分为：1, 4, 9, 16 → 即 1², 2², 3², 4²，下一个差分为 5²=25，32+25=57。'
+  },
+
+  // ===== 数学运算 (3题) =====
+  {
+    id: 4, domain: '数学运算',
+    text: '一个水池有进水管和排水管。单独开进水管 6 小时注满，单独开排水管 8 小时排空。如果两管同时开，需要多少小时注满？',
+    options: [
+      '14 小时',
+      '24 小时',
+      '20 小时',
+      '28 小时'
+    ],
+    answer: 1,
+    explanation: '进水管效率 1/6，排水管效率 1/8，净效率 = 1/6 - 1/8 = 4/24 - 3/24 = 1/24，需要 24 小时注满。'
+  },
+  {
+    id: 5, domain: '数学运算',
+    text: '一个两位数，十位数是个位数的 2 倍。如果把这个两位数的十位和个位交换，得到的新数比原数小 36。这个两位数是多少？',
+    options: [
+      '42',
+      '63',
+      '84',
+      '21'
+    ],
+    answer: 2,
+    explanation: '设个位为 x，十位为 2x，原数 = 20x + x = 21x。交换后 = 10x + 2x = 12x。21x - 12x = 9x = 36，x = 4。原数 = 84。'
+  },
+  {
+    id: 6, domain: '数学运算',
+    text: '1 + 2 + 3 + ... + 99 + 100 的结果是多少？',
+    options: [
+      '4950',
+      '5000',
+      '5050',
+      '5100'
+    ],
+    answer: 2,
+    explanation: '高斯求和公式：(首项+末项)×项数÷2 = (1+100)×100÷2 = 101×50 = 5050。'
+  },
+
+  // ===== 空间想象 (3题) =====
+  {
+    id: 7, domain: '空间想象',
+    text: '一个立方体有 6 个面。如果把它切成 27 个相同的小立方体（3×3×3），有多少个小立方体恰好有 2 个面被涂色？（假设原立方体表面全部涂色）',
+    options: [
+      '8 个',
+      '12 个',
+      '16 个',
+      '20 个'
+    ],
+    answer: 1,
+    explanation: '两面上色的小立方体位于每条棱的中间位置（去掉两端的角块）。立方体有 12 条棱，每条棱中间有 1 个（3-2=1），共 12 个。'
+  },
+  {
+    id: 8, domain: '空间想象',
+    text: '下面四个选项中，哪一个不能由左边的平面展开图折叠而成？\n\n（想象一个标准的正方体展开图——十字形，即中间四个面上下各一个面）',
+    options: [
+      '相对的两个面永远不相邻',
+      '相邻的面在展开图中必有公共边',
+      '所有 6 个面都可以两两相邻',
+      '展开图折叠后每个顶点汇聚 3 个面'
+    ],
+    answer: 2,
+    explanation: '正方体中相对的面永远不会相邻，因此"所有 6 个面都可以两两相邻"是错误的。每个面最多与 4 个其他面相邻，相对面不可能相邻。'
+  },
+  {
+    id: 9, domain: '空间想象',
+    text: '一个钟表显示 3:15，时针和分针之间的夹角是多少度？',
+    options: [
+      '0°',
+      '7.5°',
+      '15°',
+      '22.5°'
+    ],
+    answer: 1,
+    explanation: '分针在 15 分钟指向 3（90°）。时针从 3 点位置向前移动：每小时走 30°，15 分钟走 30°×15/60=7.5°。时针在 90°+7.5°=97.5°，分针在 90°，夹角 = 7.5°。'
+  },
+
+  // ===== 语言理解 (3题) =====
+  {
+    id: 10, domain: '语言理解',
+    text: '"他对这个问题的分析入木三分。"\n"入木三分"最接近的意思是？',
+    options: [
+      '表面化、不深入',
+      '深刻透彻、切中要害',
+      '模棱两可、不清晰',
+      '偏激极端、不客观'
+    ],
+    answer: 1,
+    explanation: '"入木三分"出自王羲之书法典故，原形容笔力遒劲，后比喻分析问题深刻透彻，直击本质。'
+  },
+  {
+    id: 11, domain: '语言理解',
+    text: '以下四个词中，哪一个与其他三个不属于同一类别？',
+    options: [
+      '李白',
+      '杜甫',
+      '王羲之',
+      '白居易'
+    ],
+    answer: 2,
+    explanation: '李白、杜甫、白居易都是唐代著名诗人，而王羲之是东晋书法家（以《兰亭序》闻名），不属于诗人这一类别。'
+  },
+  {
+    id: 12, domain: '语言理解',
+    text: '阅读以下段落：\n"量子纠缠是指两个粒子无论相隔多远，对其中一个粒子的测量会瞬间影响另一个粒子的状态。爱因斯坦称之为'鬼魅般的超距作用'。"\n\n根据这段文字，以下理解正确的是？',
+    options: [
+      '量子纠缠可以用于超光速传递信息',
+      '爱因斯坦完全认同量子纠缠理论',
+      '纠缠粒子之间的关联是非局域性的',
+      '量子纠缠只能在近距离发生'
+    ],
+    answer: 2,
+    explanation: '文中明确说"无论相隔多远"，说明关联是非局域性的。A 错（不能超光速传信息），B 错（爱因斯坦持怀疑态度），D 与原文相反。'
+  },
+
+  // ===== 记忆力 (3题) =====
+  {
+    id: 13, domain: '记忆力',
+    text: '请仔细阅读以下数字序列，10 秒后题目将自动进入下一题。\n\n序列：7 3 8 2 9 4 1 6 5',
+    options: [
+      '我已经记住了，进入下一题',
+      '我需要再看一遍',
+      '跳过此题',
+      '我放弃'
+    ],
+    answer: 0,
+    explanation: '记忆题：请选择"我已经记住了"以进入回忆阶段。下一题将考察你对该序列的回忆。'
+  },
+  {
+    id: 14, domain: '记忆力',
+    text: '上一题的数字序列中，从左边数第 5 个数字是什么？',
+    options: [
+      '2',
+      '9',
+      '4',
+      '8'
+    ],
+    answer: 1,
+    explanation: '序列 7-3-8-2-9-4-1-6-5，第 5 个是 9。'
+  },
+  {
+    id: 15, domain: '记忆力',
+    text: '上一题的数字序列中，所有数字之和是多少？\n（序列：7 3 8 2 9 4 1 6 5）',
+    options: [
+      '43',
+      '44',
+      '45',
+      '46'
+    ],
+    answer: 2,
+    explanation: '7+3+8+2+9+4+1+6+5 = 45。'
+  }
+];
+
+// ==========================================
+// 状态管理
+// ==========================================
+let currentQ = 0;
+let answers = {};        // { questionId: chosenOptionIndex }
+let questionTimes = {};  // { questionId: secondsSpent }
+let timerInterval = null;
+let timeLeft = 60;
+let testStartTime = null;
+let testActive = false;
+
+// ==========================================
+// DOM 引用
+// ==========================================
+const introCard = document.getElementById('introCard');
+const questionCard = document.getElementById('questionCard');
+const resultCard = document.getElementById('resultCard');
+const questionsContainer = document.getElementById('questionsContainer');
+const btnRow = document.getElementById('btnRow');
+const progressFill = document.getElementById('progressFill');
+const progressNum = document.getElementById('progressNum');
+const timer = document.getElementById('timer');
+const timerText = document.getElementById('timerText');
+
+// ==========================================
+// 计时器
+// ==========================================
+function startTimer() {
+  timeLeft = 60;
+  updateTimerDisplay();
+  timer.className = 'timer';
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 15 && timeLeft > 5) {
+      timer.className = 'timer warning';
+    } else if (timeLeft <= 5) {
+      timer.className = 'timer danger';
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      // 超时自动跳到下一题（答案留空）
+      if (currentQ < questions.length - 1) {
+        currentQ++;
+        renderQuestion();
+        questionCard.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        submitTest();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  timerText.textContent = timeLeft;
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+// ==========================================
+// 渲染题目
+// ==========================================
+function renderQuestion() {
+  stopTimer();
+  const q = questions[currentQ];
+  const selected = answers[q.id] !== undefined ? answers[q.id] : null;
+
+  questionsContainer.innerHTML = `
+    <div class="question-wrap active">
+      <div class="q-domain">${q.domain}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <button class="opt-btn ${selected === i ? 'selected' : ''}"
+                  onclick="selectOption(${i})" data-idx="${i}">
+            <span class="opt-letter">${'ABCD'[i]}</span>
+            <span>${opt}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  progressFill.style.width = ((currentQ + 1) / questions.length * 100) + '%';
+  progressNum.textContent = `${currentQ + 1}/${questions.length}`;
+
+  const isLast = currentQ === questions.length - 1;
+  btnRow.innerHTML = `
+    ${currentQ > 0 ? '<button class="btn btn-prev" onclick="prevQuestion()">← 上一题</button>' : ''}
+    ${isLast
+      ? `<button class="btn btn-submit" onclick="submitTest()" ${selected === null ? 'disabled' : ''}>提交测试</button>`
+      : `<button class="btn btn-next" onclick="nextQuestion()" ${selected === null ? 'disabled' : ''}>下一题 →</button>`
+    }
+  `;
+
+  startTimer();
+}
+
+function selectOption(idx) {
+  answers[questions[currentQ].id] = idx;
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.idx) === idx);
+  });
+  const btn = document.querySelector('.btn-next, .btn-submit');
+  if (btn) btn.disabled = false;
+}
+
+function nextQuestion() {
+  if (answers[questions[currentQ].id] === undefined) return;
+  recordTime();
+  if (currentQ < questions.length - 1) {
+    currentQ++;
+    renderQuestion();
+    questionCard.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function prevQuestion() {
+  recordTime();
+  if (currentQ > 0) {
+    currentQ--;
+    renderQuestion();
+    questionCard.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function recordTime() {
+  questionTimes[questions[currentQ].id] = 60 - timeLeft;
+}
+
+// ==========================================
+// 开始测试
+// ==========================================
+function startTest() {
+  testStartTime = Date.now();
+  testActive = true;
+  currentQ = 0;
+  answers = {};
+  questionTimes = {};
+  introCard.style.display = 'none';
+  questionCard.style.display = '';
+  resultCard.classList.remove('show');
+  renderQuestion();
+  questionCard.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ==========================================
+// 计算结果
+// ==========================================
+function calculateResult() {
+  recordTime();
+
+  let totalCorrect = 0;
+  const dimScores = { '逻辑推理': { correct: 0, total: 0 }, '数学运算': { correct: 0, total: 0 }, '空间想象': { correct: 0, total: 0 }, '语言理解': { correct: 0, total: 0 }, '记忆力': { correct: 0, total: 0 } };
+
+  for (const q of questions) {
+    const userAnswer = answers[q.id];
+    dimScores[q.domain].total++;
+    if (userAnswer !== undefined && userAnswer === q.answer) {
+      totalCorrect++;
+      dimScores[q.domain].correct++;
+    }
+  }
+
+  // IQ 估算：基于正确率映射到正态分布 IQ 量表
+  // 15题全对→145, 全错→55, 平均分布
+  const rawPercent = totalCorrect / questions.length;
+  let iq;
+  if (rawPercent <= 0.1) iq = Math.round(55 + rawPercent * 200);
+  else if (rawPercent <= 0.5) iq = Math.round(70 + (rawPercent - 0.1) / 0.4 * 30);
+  else if (rawPercent <= 0.9) iq = Math.round(100 + (rawPercent - 0.5) / 0.4 * 30);
+  else iq = Math.round(130 + (rawPercent - 0.9) / 0.1 * 15);
+
+  iq = Math.min(145, Math.max(55, iq));
+
+  const elapsed = Math.round((Date.now() - testStartTime) / 1000);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+
+  return { totalCorrect, iq, dimScores, elapsed, minutes, seconds, rawPercent };
+}
+
+// ==========================================
+// 渲染结果
+// ==========================================
+function renderResult(result) {
+  const { totalCorrect, iq, dimScores, elapsed, minutes, seconds, rawPercent } = result;
+
+  questionCard.style.display = 'none';
+  resultCard.classList.add('show');
+
+  // 分数
+  document.getElementById('resultScore').textContent = iq;
+  document.getElementById('resultRank').textContent = getIQRank(iq);
+  document.getElementById('resultTime').textContent = `正确 ${totalCorrect}/15 · 用时 ${minutes}分${seconds}秒`;
+
+  // 分数标记位置
+  const markerLeft = ((iq - 55) / 90 * 100);
+  setTimeout(() => {
+    document.getElementById('scoreMarker').style.left = markerLeft + '%';
+  }, 300);
+
+  // 维度得分
+  const dimColors = { '逻辑推理': '#58a6ff', '数学运算': '#3fb950', '空间想象': '#bc8cff', '语言理解': '#d2991d', '记忆力': '#f85149' };
+  const dimIcons = { '逻辑推理': '🔍', '数学运算': '🔢', '空间想象': '🧊', '语言理解': '📖', '记忆力': '🧠' };
+
+  document.getElementById('dimGrid').innerHTML = Object.entries(dimScores).map(([name, d]) => {
+    const pct = d.total > 0 ? d.correct / d.total : 0;
+    return `
+      <div class="dim-item">
+        <div class="dim-name">${dimIcons[name]} ${name}</div>
+        <div class="dim-score" style="color:${dimColors[name]}">${d.correct}/${d.total}</div>
+        <div class="dim-bar" style="width:0%;background:${dimColors[name]};" data-width="${pct*100}"></div>
+      </div>
+    `;
+  }).join('');
+
+  // 动画
+  setTimeout(() => {
+    document.querySelectorAll('.dim-bar').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  }, 500);
+
+  // 智力剖析
+  const analysis = getAnalysis(iq, dimScores);
+  document.getElementById('analysisBlock').innerHTML = analysis;
+
+  // 发展建议
+  const advice = getAdvice(iq, dimScores);
+  document.getElementById('adviceBlock').innerHTML = advice;
+
+  resultCard.scrollIntoView({ behavior: 'smooth' });
+}
+
+function getIQRank(iq) {
+  if (iq >= 140) return '🟣 天才级（前 0.5%）';
+  if (iq >= 130) return '🔵 非常优秀（前 2%）';
+  if (iq >= 120) return '🟢 优秀（前 10%）';
+  if (iq >= 110) return '🟡 中上（前 25%）';
+  if (iq >= 90) return '⚪ 中等（50% 区间）';
+  if (iq >= 80) return '🟠 中下（后 25%）';
+  if (iq >= 70) return '🔴 临界（后 10%）';
+  return '⚫ 待提升（后 5%）';
+}
+
+function getAnalysis(iq, dimScores) {
+  const weakDims = Object.entries(dimScores)
+    .filter(([, d]) => d.total > 0 && d.correct / d.total < 0.5)
+    .map(([n]) => n);
+  const strongDims = Object.entries(dimScores)
+    .filter(([, d]) => d.total > 0 && d.correct / d.total >= 0.66)
+    .map(([n]) => n);
+
+  let html = '<div class="desc-block">';
+  html += `<p>你的 IQ 评估分数为 <strong style="color:#58a6ff">${iq}</strong>，属于<strong>${getIQRank(iq)}</strong>水平。</p>`;
+  html += '<p style="margin-top:6px;">在人群中，你的智力水平大约处于第 <strong>' + Math.round(normalCDF(iq)) + '</strong> 百分位。</p>';
+  html += '</div>';
+
+  if (strongDims.length > 0) {
+    html += '<div class="desc-block"><p><strong style="color:#3fb950">优势维度：</strong>' + strongDims.join('、') + '</p><p style="margin-top:4px;">你在这些领域的表现显著高于平均水平，这是你的认知优势所在，建议在学业和职业选择中充分发挥这些能力。</p></div>';
+  }
+  if (weakDims.length > 0) {
+    html += '<div class="desc-block"><p><strong style="color:#d2991d">待提升维度：</strong>' + weakDims.join('、') + '</p><p style="margin-top:4px;">这些领域有较大的提升空间。智力并非固定不变，通过针对性训练可以显著改善。</p></div>';
+  }
+  return html;
+}
+
+function getAdvice(iq, dimScores) {
+  const items = [];
+
+  // 基于弱项给建议
+  const weak = Object.entries(dimScores).filter(([, d]) => d.total > 0 && d.correct / d.total < 0.5);
+  for (const [name] of weak) {
+    const tips = {
+      '逻辑推理': '每天做 2-3 道逻辑推理题，推荐《逻辑思维训练》或 Brilliant.org 上的逻辑课程',
+      '数学运算': '从基础算术重新梳理，推荐 Khan Academy 数学课程，每天 15 分钟练习',
+      '空间想象': '多玩积木、拼图或 3D 建模软件（如 SketchUp），练习心理旋转能力',
+      '语言理解': '增加阅读量，尤其是有深度的文章和经典文学，做阅读理解练习',
+      '记忆力': '练习记忆宫殿法、数字记忆术，保证充足睡眠（记忆巩固的关键时期）'
+    };
+    items.push(tips[name] || '针对性练习该维度');
+  }
+
+  if (items.length === 0) {
+    items.push('你的各项能力较为均衡，建议选择 1-2 个维度进行深度提升');
+    items.push('尝试跨领域学习——不同维度的交叉训练往往能带来突破性进步');
+  }
+
+  if (iq >= 120) {
+    items.push('你的智力水平较高，建议挑战高难度内容（如大学先修课程、学术竞赛）以保持认知成长');
+  }
+  if (iq < 90) {
+    items.push('智力可以通过训练改善，建议从基础认知任务开始，循序渐进，保持耐心和信心');
+  }
+
+  items.push('保持健康生活方式：规律运动（每周 150 分钟）、充足睡眠（7-8 小时）、均衡饮食（Omega-3 有益大脑）');
+
+  return '<div class="desc-block"><ul>' + items.map(i => '<li>' + i + '</li>').join('') + '</ul></div>';
+}
+
+// 正态分布累积概率（近似）
+function normalCDF(x, mean = 100, sd = 15) {
+  const z = (x - mean) / sd;
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return z > 0 ? Math.round((1 - p) * 100) : Math.round(p * 100);
+}
+
+// ==========================================
+// 提交
+// ==========================================
+function submitTest() {
+  if (answers[questions[currentQ].id] === undefined) return;
+  stopTimer();
+  recordTime();
+
+  // 检查是否全部作答
+  const unanswered = questions.filter(q => answers[q.id] === undefined);
+  if (unanswered.length > 0) {
+    if (!confirm(`还有 ${unanswered.length} 题未作答，超时题目将计为答错。确定提交吗？`)) {
+      // 跳回第一道未答题
+      currentQ = questions.indexOf(unanswered[0]);
+      renderQuestion();
+      questionCard.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+  }
+
+  const result = calculateResult();
+  renderResult(result);
+}
+
+function restartTest() {
+  stopTimer();
+  testActive = false;
+  currentQ = 0;
+  answers = {};
+  questionTimes = {};
+  testStartTime = null;
+  introCard.style.display = '';
+  questionCard.style.display = 'none';
+  resultCard.classList.remove('show');
+  introCard.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

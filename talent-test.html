@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天赋罗盘 · 发现你的隐藏天赋</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0f0f1a;
+    --card: rgba(18,16,28,0.92);
+    --primary: #7c6ff7;
+    --primary-light: #a89bfc;
+    --secondary: #f76f8e;
+    --accent1: #4ecdc4;
+    --accent2: #ffe66d;
+    --accent3: #ff8c42;
+    --text: #d8d8e8;
+    --dim: #6a6a82;
+    --border: rgba(140,130,200,0.18);
+  }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh; overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 30% 20%, rgba(124,111,247,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 60%, rgba(247,111,142,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(78,205,196,0.04) 0%, transparent 50%);
+  }
+
+  /* 星空粒子 */
+  .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute; border-radius: 50%;
+    background: white;
+    animation: twinkle ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.6); }
+  }
+
+  /* 星座线 */
+  .constellation {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; opacity: 0.06;
+  }
+  .constellation svg { width: 100%; height: 100%; }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 640px; margin: 0 auto; padding: 20px;
+  }
+
+  /* 头部 */
+  .header {
+    text-align: center; padding: 40px 20px 28px;
+  }
+  .header .icon {
+    font-size: 44px; margin-bottom: 8px;
+    animation: floatIcon 4s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes floatIcon {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(3deg); }
+    75% { transform: translateY(4px) rotate(-3deg); }
+  }
+  .header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2.1rem; font-weight: 900;
+    background: linear-gradient(135deg, #a89bfc, #f76f8e, #ffe66d);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+  }
+  .header .subtitle {
+    font-size: 0.85rem; color: var(--dim);
+    margin-top: 6px; letter-spacing: 2px;
+  }
+
+  /* 卡片 */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px 28px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+
+  /* 进度 */
+  .progress-wrap {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+  }
+  .progress-bar {
+    flex: 1; height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.5s ease;
+  }
+  .progress-num {
+    font-size: 0.75rem; color: var(--dim);
+    min-width: 38px; text-align: right;
+  }
+
+  /* 题目 */
+  .question-wrap { display: none; }
+  .question-wrap.active { display: block; animation: slideUp 0.4s ease; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .q-label {
+    font-size: 0.72rem; color: var(--primary-light);
+    letter-spacing: 3px; margin-bottom: 8px;
+  }
+  .q-text {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.18rem; font-weight: 600;
+    color: #e4e4f0; margin-bottom: 26px;
+    line-height: 1.7;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px 18px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(140,130,200,0.12);
+    border-radius: 12px;
+    color: #b8b8cc; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.3s ease;
+    text-align: left; font-family: inherit;
+  }
+  .opt-btn:hover {
+    background: rgba(124,111,247,0.08);
+    border-color: rgba(124,111,247,0.35);
+    color: #d4d4e8; transform: translateX(3px);
+  }
+  .opt-btn.selected {
+    background: rgba(124,111,247,0.12);
+    border-color: var(--primary);
+    color: var(--primary-light);
+    box-shadow: 0 0 18px rgba(124,111,247,0.1);
+  }
+  .opt-icon { font-size: 1.3rem; width: 32px; text-align: center; flex-shrink: 0; }
+
+  /* 按钮 */
+  .btn-row { display: flex; gap: 12px; margin-top: 26px; justify-content: center; }
+  .btn {
+    padding: 11px 30px; border-radius: 26px;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.3s ease;
+    font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-prev {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+  }
+  .btn-prev:hover { border-color: var(--primary); color: var(--primary-light); }
+  .btn-next {
+    background: linear-gradient(135deg, #5a4fcf, #7c6ff7);
+    color: #e8e8ff;
+    box-shadow: 0 3px 16px rgba(124,111,247,0.2);
+  }
+  .btn-next:hover {
+    box-shadow: 0 5px 24px rgba(124,111,247,0.35);
+    transform: translateY(-1px);
+  }
+  .btn-next:disabled {
+    opacity: 0.3; cursor: not-allowed; box-shadow: none; transform: none;
+  }
+  .btn-submit {
+    background: linear-gradient(135deg, #f76f8e, #c94b6c);
+    color: #fff0f4;
+    font-size: 1rem; padding: 13px 40px;
+    box-shadow: 0 3px 20px rgba(247,111,142,0.25);
+  }
+  .btn-submit:hover {
+    box-shadow: 0 6px 30px rgba(247,111,142,0.4);
+    transform: translateY(-2px);
+  }
+  .btn-submit:disabled {
+    opacity: 0.3; cursor: not-allowed; box-shadow: none; transform: none;
+  }
+
+  /* ===== 结果页 ===== */
+  .result-wrap { display: none; }
+  .result-wrap.show { display: block; animation: slideUp 0.6s ease; }
+
+  .result-hero { text-align: center; padding: 20px 0 8px; }
+  .result-emoji {
+    font-size: 72px; display: block;
+    animation: popIn 0.7s ease;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.12) rotate(3deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .result-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.8rem; font-weight: 900; margin-top: 8px;
+  }
+  .result-subtitle {
+    font-size: 0.9rem; color: var(--dim);
+    margin-top: 4px; letter-spacing: 2px;
+  }
+
+  /* 雷达图容器 */
+  .radar-wrap {
+    display: flex; justify-content: center;
+    margin: 16px 0;
+  }
+  .radar-wrap canvas {
+    max-width: 280px; max-height: 280px;
+  }
+
+  /* 天赋标签 */
+  .talent-tags {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin: 12px 0 20px;
+  }
+  .talent-tag {
+    padding: 6px 16px; border-radius: 18px;
+    font-size: 0.8rem; font-weight: 600;
+  }
+
+  /* 描述区块 */
+  .section-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1rem; color: var(--primary-light);
+    margin: 22px 0 12px; letter-spacing: 2px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(140,130,200,0.1);
+  }
+
+  .desc-block {
+    background: rgba(124,111,247,0.05);
+    border: 1px solid rgba(124,111,247,0.1);
+    border-radius: 14px; padding: 18px;
+    margin-bottom: 14px;
+  }
+  .desc-block h4 {
+    font-size: 0.82rem; color: var(--accent2);
+    letter-spacing: 2px; margin-bottom: 8px;
+  }
+  .desc-block p, .desc-block li {
+    font-size: 0.88rem; color: #a8a8c0; line-height: 1.7;
+  }
+  .desc-block ul { list-style: none; padding: 0; }
+  .desc-block li { padding: 4px 0 4px 18px; position: relative; }
+  .desc-block li::before {
+    content: '✦'; position: absolute; left: 0;
+    color: var(--primary-light); font-size: 0.55rem; top: 8px;
+  }
+
+  /* 领域推荐 */
+  .domain-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 14px 0;
+  }
+  .domain-item {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+    text-align: center;
+  }
+  .domain-item .d-icon { font-size: 1.5rem; margin-bottom: 4px; }
+  .domain-item .d-name {
+    font-size: 0.82rem; font-weight: 600; color: #c8c8e0;
+  }
+  .domain-item .d-desc {
+    font-size: 0.72rem; color: var(--dim); margin-top: 2px;
+  }
+
+  .btn-restart {
+    background: transparent;
+    border: 1px solid rgba(168,155,252,0.35);
+    color: var(--primary-light); padding: 10px 26px;
+    border-radius: 26px; font-size: 0.9rem;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.3s ease;
+    display: block; margin: 24px auto 0;
+  }
+  .btn-restart:hover { background: rgba(124,111,247,0.1); }
+
+  /* 加载 */
+  .loading-overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(8,8,16,0.92);
+    z-index: 100;
+    justify-content: center; align-items: center;
+    flex-direction: column;
+  }
+  .loading-overlay.show { display: flex; }
+  .loading-ring {
+    width: 50px; height: 50px;
+    border: 3px solid rgba(124,111,247,0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    margin-top: 18px; color: var(--dim);
+    letter-spacing: 3px; font-size: 0.85rem;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.5rem; }
+    .card { padding: 22px 16px; }
+    .q-text { font-size: 1.05rem; }
+    .opt-btn { padding: 12px 14px; font-size: 0.84rem; }
+    .result-emoji { font-size: 56px; }
+    .result-title { font-size: 1.4rem; }
+    .domain-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="constellation">
+  <svg viewBox="0 0 800 600">
+    <line x1="100" y1="100" x2="200" y2="180" stroke="white" stroke-width="1"/>
+    <line x1="200" y1="180" x2="350" y2="150" stroke="white" stroke-width="1"/>
+    <line x1="350" y1="150" x2="500" y2="220" stroke="white" stroke-width="1"/>
+    <line x1="500" y1="220" x2="650" y2="160" stroke="white" stroke-width="1"/>
+    <line x1="650" y1="160" x2="700" y2="280" stroke="white" stroke-width="1"/>
+    <line x1="100" y1="100" x2="250" y2="60" stroke="white" stroke-width="1"/>
+    <line x1="250" y1="60" x2="450" y2="80" stroke="white" stroke-width="1"/>
+    <line x1="450" y1="80" x2="600" y2="50" stroke="white" stroke-width="1"/>
+  </svg>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-ring"></div>
+  <div class="loading-text">正在解析你的天赋图谱...</div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="icon">🧬</div>
+    <h1>天赋罗盘</h1>
+    <p class="subtitle">—— 10 道题，解锁你与生俱来的隐藏天赋 ——</p>
+  </div>
+
+  <!-- 题目卡片 -->
+  <div class="card" id="questionCard">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-num" id="progressNum">1/10</div>
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="card result-wrap" id="resultCard">
+    <div class="result-hero">
+      <span class="result-emoji" id="resultEmoji"></span>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-subtitle" id="resultSubtitle"></div>
+    </div>
+
+    <div class="talent-tags" id="talentTags"></div>
+    <div class="radar-wrap"><canvas id="radarCanvas"></canvas></div>
+
+    <div class="section-title">🧠 天赋解析</div>
+    <div id="talentAnalysis"></div>
+
+    <div class="section-title">🎯 适合你的领域</div>
+    <div class="domain-grid" id="domainGrid"></div>
+
+    <div class="section-title">💡 发展建议</div>
+    <div id="adviceSection"></div>
+
+    <button class="btn-restart" onclick="restartTest()">⟳ 重新测试</button>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 题目数据
+// ==========================================
+const questions = [
+  {
+    id: 1,
+    text: '遇到一个完全陌生的领域，你的第一反应是？',
+    options: [
+      { text: '找出规律和底层逻辑，把它拆解清楚', value: 'logic', icon: '🔍' },
+      { text: '凭直觉去感受，不需要完全理解也能上手', value: 'intuition', icon: '🌊' },
+      { text: '找个人带着你，边聊边学最快', value: 'social', icon: '💬' },
+      { text: '画图或做笔记，把信息可视化', value: 'visual', icon: '🎨' },
+      { text: '先动手试试，错了再说', value: 'action', icon: '🛠️' }
+    ]
+  },
+  {
+    id: 2,
+    text: '小时候，你最常被老师或家长夸的是什么？',
+    options: [
+      { text: '"这孩子脑子真快，数学题一点就通"', value: 'logic', icon: '🧮' },
+      { text: '"想象力太丰富了，作文写得真好"', value: 'creative', icon: '✍️' },
+      { text: '"这孩子特别会说话，跟谁都能聊得来"', value: 'social', icon: '🗣️' },
+      { text: '"动手能力真强，什么东西到你手里都能修好"', value: 'action', icon: '🔧' },
+      { text: '"坐得住，专注力特别好"', value: 'focus', icon: '🎯' }
+    ]
+  },
+  {
+    id: 3,
+    text: '当你听到一首歌，你最容易注意到什么？',
+    options: [
+      { text: '旋律的走向和和声结构——像解数学题一样美妙', value: 'logic', icon: '🎼' },
+      { text: '歌词里的故事和画面——脑海里自动浮现场景', value: 'creative', icon: '📖' },
+      { text: '歌手表达的情绪——能感受到 ta 的心情', value: 'empathy', icon: '💗' },
+      { text: '节奏和律动——身体不由自主想跟着动', value: 'body', icon: '💃' },
+      { text: '这首歌适合什么场景——立刻想到该分享给谁', value: 'social', icon: '🔗' }
+    ]
+  },
+  {
+    id: 4,
+    text: '团队合作中，你最自然扮演的角色是？',
+    options: [
+      { text: '制定计划和框架，确保事情有条理', value: 'logic', icon: '📋' },
+      { text: '提出脑洞大开的想法，打破常规思维', value: 'creative', icon: '💡' },
+      { text: '协调大家的情绪，让团队氛围更融洽', value: 'empathy', icon: '🤝' },
+      { text: '推动执行，把想法变成现实', value: 'action', icon: '⚡' },
+      { text: '把控细节和质量，确保不出错', value: 'focus', icon: '🔬' }
+    ]
+  },
+  {
+    id: 5,
+    text: '独自一人时，你最容易进入什么状态？',
+    options: [
+      { text: '思考人生大问题，试图理清世界的运行规则', value: 'logic', icon: '🌌' },
+      { text: '脑海里的想法一个接一个，根本停不下来', value: 'creative', icon: '🎪' },
+      { text: '回顾今天和谁说了什么，琢磨人际关系', value: 'social', icon: '🪞' },
+      { text: '坐不住，总想站起来做点什么', value: 'body', icon: '🏃' },
+      { text: '沉浸在某件事里，忘了时间流逝', value: 'focus', icon: '⏳' }
+    ]
+  },
+  {
+    id: 6,
+    text: '如果要学一项新技能，哪种方式最高效？',
+    options: [
+      { text: '看教程或说明书，一步步跟着做', value: 'focus', icon: '📘' },
+      { text: '找高手当面教你，边问边学', value: 'social', icon: '👨‍🏫' },
+      { text: '不管三七二十一先上手，在试错中学会', value: 'action', icon: '🧪' },
+      { text: '先理解背后的原理，通了就全会了', value: 'logic', icon: '⚙️' },
+      { text: '用图像或思维导图辅助记忆', value: 'visual', icon: '🗺️' }
+    ]
+  },
+  {
+    id: 7,
+    text: '哪种"混乱"最让你受不了？',
+    options: [
+      { text: '逻辑混乱——前言不搭后语，完全没有因果', value: 'logic', icon: '😵' },
+      { text: '视觉混乱——乱七八糟的颜色和布局', value: 'visual', icon: '👀' },
+      { text: '情绪混乱——气氛尴尬，大家各怀心思', value: 'empathy', icon: '😰' },
+      { text: '秩序混乱——东西乱放，没有规则流程', value: 'focus', icon: '📦' },
+      { text: '节奏混乱——事情没有推进，大家都在等', value: 'action', icon: '🐌' }
+    ]
+  },
+  {
+    id: 8,
+    text: '别人最常因为什么事情来找你帮忙？',
+    options: [
+      { text: '分析问题、做决策——"帮我想想这事怎么办"', value: 'logic', icon: '🧠' },
+      { text: '出点子、想创意——"给我点灵感吧"', value: 'creative', icon: '✨' },
+      { text: '倾诉和安慰——"我最近好烦，想找你聊聊"', value: 'empathy', icon: '🫂' },
+      { text: '动手做事——"这个东西坏了你帮我看看"', value: 'action', icon: '🛠️' },
+      { text: '组织协调——"你来牵头吧，大家听你的"', value: 'social', icon: '📢' }
+    ]
+  },
+  {
+    id: 9,
+    text: '你更倾向于用哪种方式表达自己？',
+    options: [
+      { text: '文字——写出来比说出来更清晰有力', value: 'creative', icon: '📝' },
+      { text: '语言——面对面聊，语言是我的最强工具', value: 'social', icon: '🎤' },
+      { text: '身体——用动作、表情或肢体来表达', value: 'body', icon: '🤸' },
+      { text: '图像——画出来、拍出来比说出来更直观', value: 'visual', icon: '📐' },
+      { text: '行动——不用说，做出来就是最好的表达', value: 'action', icon: '🏗️' }
+    ]
+  },
+  {
+    id: 10,
+    text: '你内心深处，最渴望成为什么样的人？',
+    options: [
+      { text: '一个看清世界本质的智者', value: 'logic', icon: '🦉' },
+      { text: '一个创造美好、留下作品的艺术家', value: 'creative', icon: '🎭' },
+      { text: '一个被很多人需要和信赖的人', value: 'empathy', icon: '🌟' },
+      { text: '一个不断突破极限、挑战不可能的人', value: 'body', icon: '🏔️' },
+      { text: '一个专注一件事做到极致的大师', value: 'focus', icon: '🏆' }
+    ]
+  }
+];
+
+// ==========================================
+// 天赋类型定义
+// ==========================================
+const talentTypes = {
+  logic: {
+    name: '逻辑之刃',
+    emoji: '⚡',
+    subtitle: '你的天赋是用理性解剖世界',
+    color: '#7c6ff7',
+    tags: ['分析型思维', '系统思考', '抽象推理'],
+    analysis: [
+      { title: '核心天赋', text: '你天生善于发现事物背后的规律和模式。面对复杂问题，你能快速抓住本质并构建框架。你的大脑像一个精密的处理器，对逻辑一致性有近乎本能的追求。' },
+      { title: '思维特征', text: '你的思考方式倾向于"先理解再行动"。遇到新事物，你会下意识地追问"为什么"。你擅长将模糊的问题转化为清晰的定义，在混乱中建立秩序。' }
+    ],
+    domains: [
+      { icon: '💻', name: '编程/技术', desc: '算法与系统架构' },
+      { icon: '📊', name: '数据分析', desc: '从数字中发现洞察' },
+      { icon: '⚖️', name: '法律/咨询', desc: '逻辑严谨的表达' },
+      { icon: '🔬', name: '科学研究', desc: '探索事物本质' }
+    ],
+    advice: [
+      '多读哲学和科学史，训练"第一性原理"思维',
+      '尝试将你的分析写成文章或博客，分享能放大你的天赋',
+      '注意：过度依赖逻辑可能让你忽视情感维度，偶尔"跟着感觉走"也是成长',
+      '推荐工具：思维导图、费曼学习法、系统思考框架'
+    ]
+  },
+  creative: {
+    name: '灵感之泉',
+    emoji: '🎨',
+    subtitle: '你的天赋是创造前所未有的东西',
+    color: '#f76f8e',
+    tags: ['想象力', '原创性', '表达力'],
+    analysis: [
+      { title: '核心天赋', text: '你的大脑是一座永不枯竭的创意工厂。你能看到别人看不到的关联，在看似无关的事物之间搭起桥梁。你的想法常常让人拍案叫绝——"我怎么没想到？"' },
+      { title: '思维特征', text: '你的思考是发散式的，像烟花一样从一个点炸开无数可能性。你不喜欢循规蹈矩，"标准答案"对你来说是束缚。灵感随时随地会冒出来，你需要随时记录。' }
+    ],
+    domains: [
+      { icon: '✍️', name: '写作/内容', desc: '文字是你的武器' },
+      { icon: '🎬', name: '影视/设计', desc: '视觉化表达' },
+      { icon: '🎵', name: '音乐/艺术', desc: '情感与美的创造' },
+      { icon: '🚀', name: '创业/产品', desc: '从0到1的创造' }
+    ],
+    advice: [
+      '建立一个"灵感库"，随时记录闪过的念头，定期回顾',
+      '多跨界学习——创意往往来自不同领域的碰撞',
+      '注意：灵感太多容易分散精力，学会聚焦一个项目做到底',
+      '给自己设定"创作截止日"，灵感需要被执行力接住'
+    ]
+  },
+  social: {
+    name: '连接之力',
+    emoji: '🤝',
+    subtitle: '你的天赋是让人与人之间产生化学反应',
+    color: '#4ecdc4',
+    tags: ['沟通力', '影响力', '人际敏感度'],
+    analysis: [
+      { title: '核心天赋', text: '你对人有着天然的直觉。你能迅速感知他人的情绪和需求，并在恰当的时机说出恰当的话。人群中的你像润滑剂，让一切变得更流畅、更温暖。' },
+      { title: '思维特征', text: '你的思维是"关系导向"的。你习惯从人的角度思考问题，擅长换位思考。你能同时关注到"事"和"人"，这让你的解决方案总是更接地气。' }
+    ],
+    domains: [
+      { icon: '📢', name: '销售/市场', desc: '理解需求并打动人' },
+      { icon: '👥', name: '管理/HR', desc: '激发团队潜能' },
+      { icon: '🎤', name: '培训/演讲', desc: '传播思想与知识' },
+      { icon: '🤳', name: '自媒体/社群', desc: '建立个人影响力' }
+    ],
+    advice: [
+      '有意识地扩展社交圈，你的天赋需要"人的土壤"',
+      '学习一些心理学知识（如MBTI、DISC），让你的直觉更精准',
+      '注意：社交消耗你的同时也滋养你，学会区分"充电"和"放电"的社交',
+      '尝试组织活动或发起项目，在实践中锻炼领导力'
+    ]
+  },
+  empathy: {
+    name: '共情之镜',
+    emoji: '🫂',
+    subtitle: '你的天赋是看见并治愈他人的内心',
+    color: '#ffe66d',
+    tags: ['共情力', '洞察力', '治愈力'],
+    analysis: [
+      { title: '核心天赋', text: '你像一面清澈的镜子，能映照出他人内心最真实的状态。别人没说出口的话，你听到了；别人藏起来的情绪，你感受到了。这种天赋让你成为很多人心中的"安全港"。' },
+      { title: '思维特征', text: '你的感知系统异常敏锐。你能捕捉到微表情、语气变化、肢体语言中隐藏的信息。你不仅理解他人的感受，还能从中看到更大的图景——人与人之间的情感流动。' }
+    ],
+    domains: [
+      { icon: '🧘', name: '心理咨询', desc: '专业地帮助他人' },
+      { icon: '📚', name: '教育/社工', desc: '滋养下一代' },
+      { icon: '🏥', name: '医疗/护理', desc: '身心双重疗愈' },
+      { icon: '🎭', name: '表演/导演', desc: '理解人性的深度' }
+    ],
+    advice: [
+      '学会"情绪边界"——你能感受到别人的痛苦，但不等于你要背负它',
+      '把共情力转化为行动力：记录观察、做志愿者、系统学习',
+      '注意：高共情者容易情绪透支，务必安排独处的"回血"时间',
+      '推荐阅读：《非暴力沟通》《共情的力量》'
+    ]
+  },
+  body: {
+    name: '身体之智',
+    emoji: '🏃',
+    subtitle: '你的天赋是用身体与世界对话',
+    color: '#ff8c42',
+    tags: ['身体感知', '行动力', '协调性'],
+    analysis: [
+      { title: '核心天赋', text: '你的身体就是你的第一语言。你的肌肉记忆、平衡感、反应速度远超常人。在别人还在"想"的时候，你已经"做"了。你通过身体感知世界，这是一种原始而强大的智慧。' },
+      { title: '思维特征', text: '你是"行动驱动"型的人。学习新事物时，你更喜欢动手操作而非纸上谈兵。身体的反馈比大脑的分析更让你信服。你相信"做了才知道"，而且一做就停不下来。' }
+    ],
+    domains: [
+      { icon: '⚽', name: '体育/竞技', desc: '追求身体极限' },
+      { icon: '💃', name: '舞蹈/表演', desc: '身体即艺术' },
+      { icon: '🔧', name: '手工艺/制造', desc: '用双手创造' },
+      { icon: '🚑', name: '急救/消防', desc: '临场反应力' }
+    ],
+    advice: [
+      '保持规律的身体训练，你的天赋需要持续打磨',
+      '尝试不同种类的运动/手工，找到让你"心流"的那一项',
+      '注意：身体天赋容易被传统教育忽视，请相信它的价值',
+      '将身体智能与认知智能结合——比如学习运动科学、人体工学'
+    ]
+  },
+  focus: {
+    name: '专注之锚',
+    emoji: '🎯',
+    subtitle: '你的天赋是在喧嚣中抵达深度',
+    color: '#a89bfc',
+    tags: ['专注力', '深度思考', '完美主义'],
+    analysis: [
+      { title: '核心天赋', text: '在这个注意力被撕成碎片的时代，你拥有一种越来越稀缺的能力：深度专注。你能在别人焦躁分心时稳如磐石，进入一种近乎冥想的工作状态。时间在你专注时仿佛消失了。' },
+      { title: '思维特征', text: '你不追求广度，而是深度。你愿意花别人十倍的时间去打磨一个细节、理解一个概念。你相信"少即是多"，比起知道很多皮毛，你更愿意把一件事做到无人能及。' }
+    ],
+    domains: [
+      { icon: '💎', name: '学术研究', desc: '深耕一个领域' },
+      { icon: '🎻', name: '音乐/乐器', desc: '一万小时定律' },
+      { icon: '🔐', name: '安全/审计', desc: '细节决定成败' },
+      { icon: '🏺', name: '文物保护/修复', desc: '用时间对抗时间' }
+    ],
+    advice: [
+      '保护你的注意力像保护生命——减少社交媒体、设定深度工作时间块',
+      '选择一个值得深耕的领域，你的天赋需要足够大的"舞台"',
+      '注意：过度专注可能导致"隧道视野"，定期跳出来看全局',
+      '推荐方法：番茄工作法、冥想训练、刻意练习框架'
+    ]
+  },
+  visual: {
+    name: '视觉之眼',
+    emoji: '👁️',
+    subtitle: '你的天赋是用画面理解和表达世界',
+    color: '#ff6b6b',
+    tags: ['空间想象', '审美力', '可视化'],
+    analysis: [
+      { title: '核心天赋', text: '你的眼睛能看到别人忽略的美和秩序。你对色彩、构图、空间比例有着天然的敏感。当你描述一件事时，你的脑海里先出现画面——然后才是语言。' },
+      { title: '思维特征', text: '你是"视觉优先"的思考者。信息以图像的形式进入你的大脑，你也最擅长用图像输出。你看一张图能理解的信息比读一段文字还多。复杂的概念在你脑中会"自动翻译"成图示。' }
+    ],
+    domains: [
+      { icon: '🖌️', name: '设计/UI/UX', desc: '创造美的体验' },
+      { icon: '📷', name: '摄影/影视', desc: '用镜头讲故事' },
+      { icon: '🏛️', name: '建筑/室内', desc: '空间的艺术' },
+      { icon: '🎮', name: '游戏/动画', desc: '构建视觉世界' }
+    ],
+    advice: [
+      '建立你的"视觉灵感库"——Pinterest、Behance 是你的好朋友',
+      '学习基础的设计原则和色彩理论，让直觉变成可复制的方法',
+      '注意：视觉天赋容易变成"颜控"，学会欣赏功能性和实用性',
+      '尝试数据可视化——将你的天赋和理性分析结合'
+    ]
+  },
+  intuition: {
+    name: '直觉之光',
+    emoji: '🌙',
+    subtitle: '你的天赋是在迷雾中看见方向',
+    color: '#c084fc',
+    tags: ['直觉力', '洞察力', '预判力'],
+    analysis: [
+      { title: '核心天赋', text: '你有一种说不清道不明的"第六感"。在信息不足的情况下，你常常能做出正确的判断。这不是玄学——是你的潜意识在高速处理大量细微信息后给出的"快速答案"。' },
+      { title: '思维特征', text: '你的思考方式不是线性的。你可能说不清"为什么"，但你就是"知道"。你的大脑在后台不停运转，在你意识不到的时候已经完成了分析和整合。相信你的直觉，它比你以为的更聪明。' }
+    ],
+    domains: [
+      { icon: '📈', name: '投资/交易', desc: '快速判断和决策' },
+      { icon: '🎯', name: '战略/策划', desc: '在不确定中导航' },
+      { icon: '🕵️', name: '调查/侦探', desc: '看见隐藏的真相' },
+      { icon: '🧭', name: '咨询/顾问', desc: '为企业指路' }
+    ],
+    advice: [
+      '记录你的直觉判断和结果，培养对直觉的校准能力',
+      '直觉+数据是最强组合——用数据验证直觉，用直觉指引方向',
+      '注意：直觉有时会被偏见污染，定期反思和修正',
+      '推荐方法：冥想、日记、定期独处——给潜意识处理信息的空间'
+    ]
+  },
+  action: {
+    name: '行动之火',
+    emoji: '🔥',
+    subtitle: '你的天赋是把想法变成现实的速度',
+    color: '#f97316',
+    tags: ['执行力', '果断', '抗压'],
+    analysis: [
+      { title: '核心天赋', text: '在别人还在犹豫、分析、讨论的时候，你已经迈出了第一步。你不怕犯错，因为你知道犯错是成长的捷径。你的行动力是一种稀缺天赋——世界上从来不缺好想法，缺的是能把想法落地的人。' },
+      { title: '思维特征', text: '你是"做中学"的典型。理论和计划对你来说只是起点，真正的学习发生在行动中。你相信迭代的力量——先做出一个粗糙的版本，然后不断改进。速度是你的优势。' }
+    ],
+    domains: [
+      { icon: '🚀', name: '创业', desc: '从想法到落地' },
+      { icon: '🏗️', name: '项目管理', desc: '推动复杂事物' },
+      { icon: '⚡', name: '紧急响应', desc: '危机中的定心丸' },
+      { icon: '🔧', name: '工程/制造', desc: '建造看得见的东西' }
+    ],
+    advice: [
+      '速度是你的优势，但偶尔放慢脚步做复盘会走得更远',
+      '找一个"思考型"的搭档——你们的互补会创造奇迹',
+      '注意：避免变成"无头苍蝇"，定期确认方向是否正确',
+      '推荐方法：MVP思维（最小可行产品）、敏捷迭代、每日站会'
+    ]
+  }
+};
+
+// ==========================================
+// 状态
+// ==========================================
+let currentQ = 0;
+let answers = {};
+let selectedOpt = null;
+
+// ==========================================
+// 星空背景
+// ==========================================
+function initStars() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.width = s.style.height = size + 'px';
+    s.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    c.appendChild(s);
+  }
+}
+
+// ==========================================
+// 渲染题目
+// ==========================================
+function renderQuestion() {
+  const q = questions[currentQ];
+  const container = document.getElementById('questionsContainer');
+  const btnRow = document.getElementById('btnRow');
+  const progressFill = document.getElementById('progressFill');
+  const progressNum = document.getElementById('progressNum');
+
+  selectedOpt = answers[q.id] !== undefined ? answers[q.id] : null;
+
+  container.innerHTML = `
+    <div class="question-wrap active">
+      <div class="q-label">第 ${q.id} 问</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <button class="opt-btn ${selectedOpt === i ? 'selected' : ''}"
+                  onclick="selectOption(${i})" data-idx="${i}">
+            <span class="opt-icon">${opt.icon}</span>
+            <span>${opt.text}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  progressFill.style.width = ((currentQ + 1) / questions.length * 100) + '%';
+  progressNum.textContent = `${currentQ + 1}/${questions.length}`;
+
+  const isLast = currentQ === questions.length - 1;
+  btnRow.innerHTML = `
+    ${currentQ > 0 ? '<button class="btn btn-prev" onclick="prevQuestion()">← 上一题</button>' : ''}
+    ${isLast
+      ? `<button class="btn btn-submit" onclick="submitTest()" ${selectedOpt === null ? 'disabled' : ''}>✦ 解锁我的天赋 ✦</button>`
+      : `<button class="btn btn-next" onclick="nextQuestion()" ${selectedOpt === null ? 'disabled' : ''}>下一题 →</button>`
+    }
+  `;
+}
+
+function selectOption(idx) {
+  selectedOpt = idx;
+  answers[questions[currentQ].id] = idx;
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.idx) === idx);
+  });
+  const btn = document.querySelector('.btn-next, .btn-submit');
+  if (btn) btn.disabled = false;
+}
+
+function nextQuestion() {
+  if (selectedOpt === null) return;
+  if (currentQ < questions.length - 1) {
+    currentQ++;
+    renderQuestion();
+    document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    currentQ--;
+    renderQuestion();
+    document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// ==========================================
+// 计算结果
+// ==========================================
+function calculateResult() {
+  const scores = {};
+  for (const [qId, optIdx] of Object.entries(answers)) {
+    const q = questions.find(qq => qq.id === parseInt(qId));
+    if (q && q.options[optIdx]) {
+      const v = q.options[optIdx].value;
+      scores[v] = (scores[v] || 0) + 1;
+    }
+  }
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const primary = sorted[0][0];
+  const secondary = sorted.length > 1 ? sorted[1][0] : primary;
+  return { primary, secondary, scores, sorted };
+}
+
+// ==========================================
+// 雷达图
+// ==========================================
+function drawRadar(scores) {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const size = 280;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  ctx.scale(dpr, dpr);
+
+  const allKeys = ['logic','creative','social','empathy','body','focus','visual','intuition','action'];
+  const labels = { logic:'逻辑', creative:'创造', social:'社交', empathy:'共情', body:'身体', focus:'专注', visual:'视觉', intuition:'直觉', action:'行动' };
+  const colors = { logic:'#7c6ff7', creative:'#f76f8e', social:'#4ecdc4', empathy:'#ffe66d', body:'#ff8c42', focus:'#a89bfc', visual:'#ff6b6b', intuition:'#c084fc', action:'#f97316' };
+
+  const n = allKeys.length;
+  const cx = size / 2, cy = size / 2;
+  const r = size * 0.35;
+  const maxScore = 10;
+
+  ctx.clearRect(0, 0, size, size);
+
+  // 网格
+  for (let level = 1; level <= 5; level++) {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+      const lr = r * (level / 5);
+      const x = cx + lr * Math.cos(angle);
+      const y = cy + lr * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.stroke();
+  }
+
+  // 轴线
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.stroke();
+  }
+
+  // 数据
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const key = allKeys[i];
+    const val = scores[key] || 0;
+    const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+    const lr = r * Math.min(val / 5, 1);
+    const x = cx + lr * Math.cos(angle);
+    const y = cy + lr * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(124,111,247,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(168,155,252,0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 数据点
+  for (let i = 0; i < n; i++) {
+    const key = allKeys[i];
+    const val = scores[key] || 0;
+    const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+    const lr = r * Math.min(val / 5, 1);
+    const x = cx + lr * Math.cos(angle);
+    const y = cy + lr * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = colors[key] || '#7c6ff7';
+    ctx.fill();
+  }
+
+  // 标签
+  ctx.fillStyle = '#8a8a9e';
+  ctx.font = '11px "Noto Sans SC", "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 / n) * i - Math.PI / 2;
+    const lr = r + 22;
+    const x = cx + lr * Math.cos(angle);
+    const y = cy + lr * Math.sin(angle) + 4;
+    ctx.fillText(labels[allKeys[i]], x, y);
+  }
+}
+
+// ==========================================
+// 渲染结果
+// ==========================================
+function renderResult(result) {
+  const talent = talentTypes[result.primary];
+  const secondaryTalent = talentTypes[result.secondary];
+
+  document.getElementById('questionCard').style.display = 'none';
+  const rc = document.getElementById('resultCard');
+  rc.classList.add('show');
+
+  document.getElementById('resultEmoji').textContent = talent.emoji;
+  document.getElementById('resultTitle').innerHTML = `<span style="color:${talent.color}">${talent.name}</span>`;
+  document.getElementById('resultSubtitle').textContent = talent.subtitle;
+
+  // 标签
+  const allTags = [...talent.tags];
+  if (secondaryTalent && result.primary !== result.secondary) {
+    allTags.push(`辅助天赋：${secondaryTalent.name}`);
+  }
+  document.getElementById('talentTags').innerHTML = allTags.map(t =>
+    `<span class="talent-tag" style="background:${talent.color}20;color:${talent.color};border:1px solid ${talent.color}40">${t}</span>`
+  ).join('');
+
+  // 雷达图
+  drawRadar(result.scores);
+
+  // 天赋解析
+  document.getElementById('talentAnalysis').innerHTML = talent.analysis.map(a => `
+    <div class="desc-block">
+      <h4>${a.title}</h4>
+      <p>${a.text}</p>
+    </div>
+  `).join('');
+
+  // 领域推荐
+  document.getElementById('domainGrid').innerHTML = talent.domains.map(d => `
+    <div class="domain-item">
+      <div class="d-icon">${d.icon}</div>
+      <div class="d-name">${d.name}</div>
+      <div class="d-desc">${d.desc}</div>
+    </div>
+  `).join('');
+
+  // 发展建议
+  document.getElementById('adviceSection').innerHTML = `
+    <div class="desc-block">
+      <ul>
+        ${talent.advice.map(a => `<li>${a}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+
+  rc.scrollIntoView({ behavior: 'smooth' });
+}
+
+function submitTest() {
+  if (selectedOpt === null) return;
+  answers[questions[currentQ].id] = selectedOpt;
+
+  if (Object.keys(answers).length < questions.length) {
+    alert('请回答完所有题目再解锁天赋哦~');
+    return;
+  }
+
+  document.getElementById('loadingOverlay').classList.add('show');
+  setTimeout(() => {
+    const result = calculateResult();
+    document.getElementById('loadingOverlay').classList.remove('show');
+    renderResult(result);
+  }, 1500);
+}
+
+function restartTest() {
+  currentQ = 0;
+  answers = {};
+  selectedOpt = null;
+  document.getElementById('questionCard').style.display = '';
+  document.getElementById('resultCard').classList.remove('show');
+  renderQuestion();
+  document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ==========================================
+// 启动
+// ==========================================
+initStars();
+renderQuestion();
+</script>
+</body>
+</html>

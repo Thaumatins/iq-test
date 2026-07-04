@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五行灵兽 · 命格测试</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0a0a0f;
+    color: #e0d8c8;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 背景粒子 */
+  .bg-particles {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    animation: floatUp linear infinite;
+    opacity: 0;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.2; }
+    100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+  }
+
+  /* 八卦装饰 */
+  .bagua-decoration {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 600px; height: 600px; pointer-events: none; z-index: 0;
+    opacity: 0.04;
+  }
+  .bagua-outer {
+    width: 100%; height: 100%;
+    border: 3px solid rgba(200,170,100,0.3);
+    border-radius: 50%;
+    animation: baguaSpin 60s linear infinite;
+  }
+  .bagua-inner {
+    position: absolute; top: 15%; left: 15%; width: 70%; height: 70%;
+    border: 2px solid rgba(200,170,100,0.2);
+    border-radius: 50%;
+    animation: baguaSpin 40s linear infinite reverse;
+  }
+  @keyframes baguaSpin { to { transform: rotate(360deg); } }
+
+  /* 主容器 */
+  .container {
+    position: relative; z-index: 1;
+    max-width: 680px; margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* 头部 */
+  .header {
+    text-align: center; padding: 40px 20px 30px;
+  }
+  .header .symbol {
+    font-size: 56px; margin-bottom: 10px;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.85; }
+  }
+  .header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2.2rem; font-weight: 900;
+    background: linear-gradient(135deg, #d4a853, #f0d78c, #c9973a);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 4px;
+  }
+  .header .subtitle {
+    font-size: 0.9rem; color: #8a8070;
+    margin-top: 8px; letter-spacing: 3px;
+  }
+
+  /* 卡片 */
+  .card {
+    background: linear-gradient(145deg, rgba(20,18,15,0.95), rgba(30,25,18,0.95));
+    border: 1px solid rgba(180,140,80,0.25);
+    border-radius: 20px;
+    padding: 36px 32px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  /* 进度条 */
+  .progress-wrap {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 28px;
+  }
+  .progress-bar {
+    flex: 1; height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #c9973a, #f0d78c);
+    transition: width 0.5s ease;
+  }
+  .progress-num {
+    font-size: 0.8rem; color: #8a8070;
+    min-width: 40px; text-align: right;
+  }
+
+  /* 题目 */
+  .question-wrap { display: none; }
+  .question-wrap.active { display: block; animation: fadeSlideIn 0.45s ease; }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .question-number {
+    font-size: 0.75rem; color: #c9973a;
+    letter-spacing: 3px; margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .question-text {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.25rem; font-weight: 600;
+    color: #e8dcc8;
+    margin-bottom: 28px;
+    line-height: 1.7;
+  }
+
+  /* 选项 */
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 16px 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(180,140,80,0.15);
+    border-radius: 14px;
+    color: #c8b898;
+    font-size: 0.95rem; cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-family: inherit;
+  }
+  .option-btn:hover {
+    background: rgba(200,150,60,0.08);
+    border-color: rgba(200,150,60,0.35);
+    color: #e8dcc8;
+    transform: translateX(4px);
+  }
+  .option-btn.selected {
+    background: rgba(200,150,60,0.12);
+    border-color: #c9973a;
+    color: #f0d78c;
+    box-shadow: 0 0 20px rgba(200,150,60,0.1);
+  }
+  .option-icon {
+    font-size: 1.5rem; width: 36px; text-align: center; flex-shrink: 0;
+  }
+
+  /* 按钮 */
+  .btn-row { display: flex; gap: 12px; margin-top: 28px; justify-content: center; }
+  .btn {
+    padding: 12px 32px;
+    border-radius: 30px;
+    font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.3s ease;
+    font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-prev {
+    background: transparent;
+    border: 1px solid rgba(180,140,80,0.3);
+    color: #8a8070;
+  }
+  .btn-prev:hover { border-color: rgba(200,150,60,0.5); color: #c8b898; }
+  .btn-next {
+    background: linear-gradient(135deg, #8b6914, #c9973a);
+    color: #1a1610;
+    box-shadow: 0 4px 20px rgba(200,150,60,0.2);
+  }
+  .btn-next:hover {
+    box-shadow: 0 6px 30px rgba(200,150,60,0.35);
+    transform: translateY(-1px);
+  }
+  .btn-next:disabled {
+    opacity: 0.35; cursor: not-allowed;
+    box-shadow: none; transform: none;
+  }
+  .btn-submit {
+    background: linear-gradient(135deg, #6b3a1f, #c9602a);
+    color: #f5e6d0;
+    font-size: 1.05rem; padding: 14px 44px;
+    box-shadow: 0 4px 24px rgba(200,100,40,0.25);
+  }
+  .btn-submit:hover {
+    box-shadow: 0 6px 36px rgba(220,120,50,0.4);
+    transform: translateY(-2px);
+  }
+  .btn-restart {
+    background: transparent;
+    border: 1px solid rgba(200,150,60,0.4);
+    color: #d4a853;
+    padding: 10px 28px;
+  }
+  .btn-restart:hover { background: rgba(200,150,60,0.1); }
+
+  /* 结果页 */
+  .result-wrap { display: none; }
+  .result-wrap.show { display: block; animation: fadeSlideIn 0.6s ease; }
+
+  .result-header {
+    text-align: center; padding: 30px 0 20px;
+  }
+  .result-icon {
+    font-size: 80px; display: block;
+    animation: resultBounce 0.8s ease;
+  }
+  @keyframes resultBounce {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .result-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 2rem; font-weight: 900; margin-top: 12px;
+  }
+  .result-subtitle {
+    font-size: 1rem; color: #8a8070;
+    margin-top: 6px; letter-spacing: 2px;
+  }
+
+  /* 五行条 */
+  .element-bars { margin: 24px 0; }
+  .element-bar-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .element-label {
+    width: 60px; font-size: 0.85rem; color: #a89880;
+    text-align: right; flex-shrink: 0;
+  }
+  .element-track {
+    flex: 1; height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px; overflow: hidden;
+  }
+  .element-fill {
+    height: 100%; border-radius: 5px;
+    transition: width 1s ease;
+  }
+
+  /* 特征区块 */
+  .feature-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin: 24px 0;
+  }
+  .feature-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(180,140,80,0.12);
+    border-radius: 14px; padding: 18px;
+  }
+  .feature-item h4 {
+    font-size: 0.8rem; color: #c9973a;
+    letter-spacing: 2px; margin-bottom: 8px;
+  }
+  .feature-item p {
+    font-size: 0.9rem; color: #b0a090; line-height: 1.6;
+  }
+
+  /* 建议区块 */
+  .advice-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: rgba(200,150,60,0.05);
+    border: 1px solid rgba(200,150,60,0.15);
+    border-radius: 16px;
+  }
+  .advice-section h3 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.1rem; color: #d4a853;
+    margin-bottom: 14px; letter-spacing: 2px;
+  }
+  .advice-section ul {
+    list-style: none; padding: 0;
+  }
+  .advice-section li {
+    padding: 8px 0 8px 24px;
+    position: relative; color: #b0a090;
+    font-size: 0.9rem; line-height: 1.7;
+  }
+  .advice-section li::before {
+    content: '◆';
+    position: absolute; left: 0; top: 8px;
+    color: #c9973a; font-size: 0.5rem;
+  }
+
+  /* 加载动画 */
+  .loading-overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(5,5,8,0.9);
+    z-index: 100;
+    justify-content: center; align-items: center;
+    flex-direction: column;
+  }
+  .loading-overlay.show { display: flex; }
+  .loading-spinner {
+    width: 60px; height: 60px;
+    border: 3px solid rgba(200,150,60,0.2);
+    border-top-color: #c9973a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    margin-top: 20px; color: #8a8070;
+    letter-spacing: 3px; font-size: 0.9rem;
+  }
+
+  /* 响应式 */
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.6rem; }
+    .card { padding: 24px 18px; }
+    .question-text { font-size: 1.1rem; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .result-icon { font-size: 60px; }
+    .result-title { font-size: 1.5rem; }
+    .option-btn { padding: 14px 16px; font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 背景粒子 -->
+<div class="bg-particles" id="bgParticles"></div>
+<!-- 八卦装饰 -->
+<div class="bagua-decoration">
+  <div class="bagua-outer"></div>
+  <div class="bagua-inner"></div>
+</div>
+
+<!-- 加载层 -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">推演命格中...</div>
+</div>
+
+<!-- 主容器 -->
+<div class="container">
+  <!-- 头部 -->
+  <div class="header">
+    <div class="symbol">☯</div>
+    <h1>五行灵兽 · 命格测试</h1>
+    <p class="subtitle">—— 洞悉你的五行本命，唤醒沉睡的灵兽之魂 ——</p>
+  </div>
+
+  <!-- 题目卡片 -->
+  <div class="card" id="questionCard">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-num" id="progressNum">1/10</div>
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="card result-wrap" id="resultCard">
+    <div class="result-header">
+      <span class="result-icon" id="resultIcon"></span>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-subtitle" id="resultSubtitle"></div>
+    </div>
+    <div class="element-bars" id="elementBars"></div>
+    <div class="feature-grid" id="featureGrid"></div>
+    <div class="advice-section" id="adviceSection"></div>
+    <div style="text-align:center;margin-top:28px;">
+      <button class="btn btn-restart" onclick="restartTest()">⟳ 重新测试</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 题目数据 ==========
+const questions = [
+  {
+    id: 1,
+    text: '清晨醒来，你最容易被什么唤醒内心的能量？',
+    options: [
+      { text: '第一缕穿透窗帘的阳光，温暖而充满希望', value: 'fire', icon: '☀️' },
+      { text: '窗外树叶沙沙作响，风吹过脸庞的清新', value: 'wood', icon: '🌿' },
+      { text: '一杯清水的滋润，从头到脚的舒畅', value: 'water', icon: '💧' },
+      { text: '大地的沉稳，脚踏实地带来的安全感', value: 'earth', icon: '🏔️' },
+      { text: '金属器物清脆的碰撞声，清晰而有力量', value: 'metal', icon: '⚔️' }
+    ]
+  },
+  {
+    id: 2,
+    text: '面对一个棘手的问题，你的第一反应通常是？',
+    options: [
+      { text: '像烈火一样迅速行动，先冲上去再说', value: 'fire', icon: '🔥' },
+      { text: '像树木一样扎根分析，理清脉络再下手', value: 'wood', icon: '🌳' },
+      { text: '像水一样灵活变通，绕道而行另辟蹊径', value: 'water', icon: '🌊' },
+      { text: '像大地一样沉着冷静，以不变应万变', value: 'earth', icon: '⛰️' },
+      { text: '像金属一样精准切入，一刀见血直击要害', value: 'metal', icon: '🗡️' }
+    ]
+  },
+  {
+    id: 3,
+    text: '在人群中，你通常扮演什么样的角色？',
+    options: [
+      { text: '热情的点燃者，带动气氛的灵魂人物', value: 'fire', icon: '🎭' },
+      { text: '温和的调和者，善于化解矛盾的和平使者', value: 'wood', icon: '🕊️' },
+      { text: '深邃的观察者，安静地洞察每个人的心思', value: 'water', icon: '👁️' },
+      { text: '可靠的后盾，大家有事第一个想到你', value: 'earth', icon: '🛡️' },
+      { text: '果断的决策者，关键时刻一锤定音', value: 'metal', icon: '⚡' }
+    ]
+  },
+  {
+    id: 4,
+    text: '哪种颜色最能让你感到内心安宁？',
+    options: [
+      { text: '赤红 / 朱砂——炽烈而富有生命力', value: 'fire', icon: '🔴' },
+      { text: '青绿 / 翠色——生机盎然，万物生长', value: 'wood', icon: '🟢' },
+      { text: '墨黑 / 深蓝——深邃神秘，包容万象', value: 'water', icon: '🔵' },
+      { text: '土黄 / 赭石——厚重朴实，承载万物', value: 'earth', icon: '🟤' },
+      { text: '银白 / 金色——纯粹洁净，锋芒内敛', value: 'metal', icon: '⚪' }
+    ]
+  },
+  {
+    id: 5,
+    text: '当你心情低落时，哪种方式最能治愈你？',
+    options: [
+      { text: '去热闹的地方，让激情重新点燃自己', value: 'fire', icon: '🎉' },
+      { text: '走进自然，在花草树木间找回宁静', value: 'wood', icon: '🌸' },
+      { text: '独自待在水边，听雨声或看海，让情绪流淌', value: 'water', icon: '🌧️' },
+      { text: '回到家中，拥抱熟悉的环境和味道', value: 'earth', icon: '🏠' },
+      { text: '整理房间或工作，用秩序感找回掌控力', value: 'metal', icon: '📐' }
+    ]
+  },
+  {
+    id: 6,
+    text: '如果可以拥有一种超自然能力，你会选择？',
+    options: [
+      { text: '操控火焰——焚尽一切阻碍，光芒万丈', value: 'fire', icon: '✨' },
+      { text: '催生万物——让枯木逢春，百花绽放', value: 'wood', icon: '🌱' },
+      { text: '驾驭水流——以柔克刚，润物无声', value: 'water', icon: '💦' },
+      { text: '移山填海——稳如泰山，不可撼动', value: 'earth', icon: '🏗️' },
+      { text: '点石成金——化腐朽为神奇，无坚不摧', value: 'metal', icon: '💎' }
+    ]
+  },
+  {
+    id: 7,
+    text: '一年四季中，你最喜欢哪个季节？',
+    options: [
+      { text: '夏天——热烈奔放，万物鼎盛', value: 'fire', icon: '☀️' },
+      { text: '春天——万物复苏，生机勃发', value: 'wood', icon: '🌷' },
+      { text: '冬天——沉静内敛，蓄势待发', value: 'water', icon: '❄️' },
+      { text: '长夏（夏秋之交）——厚重丰饶，收获之时', value: 'earth', icon: '🍂' },
+      { text: '秋天——清爽肃穆，硕果累累', value: 'metal', icon: '🍁' }
+    ]
+  },
+  {
+    id: 8,
+    text: '在感情中，你最看重的是什么？',
+    options: [
+      { text: '激情与浪漫，没有火花的关系不值得继续', value: 'fire', icon: '💘' },
+      { text: '理解与成长，两个人一起变得更好', value: 'wood', icon: '🌿' },
+      { text: '灵魂共鸣，无需言语就能读懂彼此', value: 'water', icon: '🌙' },
+      { text: '忠诚与安稳，踏实的陪伴胜过千言万语', value: 'earth', icon: '🤝' },
+      { text: '尊重与边界，清晰的规则让爱更长久', value: 'metal', icon: '⚖️' }
+    ]
+  },
+  {
+    id: 9,
+    text: '你理想中的生活方式更接近哪一种？',
+    options: [
+      { text: '充满挑战和变化，每天都在燃烧自己的热情', value: 'fire', icon: '🚀' },
+      { text: '持续成长和创造，像树木一样不断向上延伸', value: 'wood', icon: '📈' },
+      { text: '自由流动，随心而行，不被任何框架束缚', value: 'water', icon: '🦅' },
+      { text: '稳定有序，构建属于自己的安稳小世界', value: 'earth', icon: '🏡' },
+      { text: '精益求精，追求极致的专业和品质', value: 'metal', icon: '🎯' }
+    ]
+  },
+  {
+    id: 10,
+    text: '面对死亡或终结，你内心的感受更接近？',
+    options: [
+      { text: '燃烧殆尽也是一种壮美，活过就不遗憾', value: 'fire', icon: '🔥' },
+      { text: '落叶归根，死亡是另一种形式的再生', value: 'wood', icon: '🍃' },
+      { text: '如水流归海，不过是换了一种形态存在', value: 'water', icon: '🌌' },
+      { text: '尘归尘土归土，一切终将回归大地怀抱', value: 'earth', icon: '🌍' },
+      { text: '金石不朽，精神与价值可以超越肉身长存', value: 'metal', icon: '🏛️' }
+    ]
+  }
+];
+
+// ========== 五行-生肖映射 ==========
+// 五行主属性 + 副属性 → 变体名称 + 动物
+const elementMapping = {
+  fire: {
+    name: '火',
+    subTypes: {
+      fire_fire: { name: '烈阳之火', animal: '凤凰', icon: '🦅🔥', color: '#ff4d2e', emoji: '🔥' },
+      fire_wood: { name: '燎原之火', animal: '赤虎', icon: '🐅🔥', color: '#ff6b35', emoji: '🔥' },
+      fire_earth: { name: '炉中之火', animal: '火牛', icon: '🐂🔥', color: '#e85d3a', emoji: '🔥' },
+      fire_metal: { name: '熔金之火', animal: '炎龙', icon: '🐉🔥', color: '#f44336', emoji: '🔥' },
+      fire_water: { name: '冰火', animal: '焰马', icon: '🐎❄️🔥', color: '#ff7043', emoji: '🔥' }
+    }
+  },
+  wood: {
+    name: '木',
+    subTypes: {
+      wood_wood: { name: '参天之木', animal: '青龙', icon: '🐉🌿', color: '#4caf50', emoji: '🌳' },
+      wood_fire: { name: '燃木', animal: '彩雉', icon: '🐦🔥🌿', color: '#66bb6a', emoji: '🌳' },
+      wood_earth: { name: '扎根之木', animal: '玄龟', icon: '🐢🌿', color: '#388e3c', emoji: '🌳' },
+      wood_metal: { name: '雕琢之木', animal: '灵猴', icon: '🐒🌿', color: '#43a047', emoji: '🌳' },
+      wood_water: { name: '水润之木', animal: '翠鹿', icon: '🦌💧🌿', color: '#2e7d32', emoji: '🌳' }
+    }
+  },
+  water: {
+    name: '水',
+    subTypes: {
+      water_water: { name: '深渊之水', animal: '玄蛇', icon: '🐍💧', color: '#2196f3', emoji: '💧' },
+      water_fire: { name: '鬼水', animal: '冥蛇', icon: '🐍🔥💧', color: '#5c6bc0', emoji: '💧' },
+      water_earth: { name: '沼泽之水', animal: '河马', icon: '🦛💧', color: '#1e88e5', emoji: '💧' },
+      water_metal: { name: '寒潭之水', animal: '白鲤', icon: '🐟💧', color: '#1976d2', emoji: '💧' },
+      water_wood: { name: '春霖之水', animal: '灵狐', icon: '🦊💧🌿', color: '#42a5f5', emoji: '💧' }
+    }
+  },
+  earth: {
+    name: '土',
+    subTypes: {
+      earth_earth: { name: '厚土', animal: '麒麟', icon: '🦄⛰️', color: '#8d6e63', emoji: '⛰️' },
+      earth_fire: { name: '焦土', animal: '熔岩龟', icon: '🐢🔥⛰️', color: '#a1887f', emoji: '⛰️' },
+      earth_metal: { name: '金石之土', animal: '金牛', icon: '🐂💎⛰️', color: '#795548', emoji: '⛰️' },
+      earth_water: { name: '沃土', animal: '地龙', icon: '🐉💧⛰️', color: '#6d4c41', emoji: '⛰️' },
+      earth_wood: { name: '生机之土', animal: '山鹿', icon: '🦌🌿⛰️', color: '#8d6e63', emoji: '⛰️' }
+    }
+  },
+  metal: {
+    name: '金',
+    subTypes: {
+      metal_metal: { name: '玄金', animal: '白虎', icon: '🐅⚔️', color: '#bdbdbd', emoji: '⚔️' },
+      metal_fire: { name: '赤金', animal: '金鹏', icon: '🦅🔥⚔️', color: '#ffab40', emoji: '⚔️' },
+      metal_earth: { name: '矿金', animal: '穿山甲', icon: '🦔⚔️', color: '#9e9e9e', emoji: '⚔️' },
+      metal_water: { name: '沉金', animal: '银狼', icon: '🐺💧⚔️', color: '#90a4ae', emoji: '⚔️' },
+      metal_wood: { name: '锋金', animal: '白猿', icon: '🐒⚔️🌿', color: '#cfd8dc', emoji: '⚔️' }
+    }
+  }
+};
+
+// ========== 动物详细描述 ==========
+const animalDescriptions = {
+  '凤凰': { traits: '高贵优雅，涅槃重生，拥有极强的生命力与感染力', advice: '你的热情是天赋，但需警惕过犹不及。学会在烈焰中保持冷静，方能真正涅槃。适合从事创意、表演、领导类工作。幸运方向：南方。' },
+  '赤虎': { traits: '勇猛果敢，行动力超群，是天生的开拓者和战士', advice: '猛虎下山固然威风，但偶尔也要学会收敛锋芒。建议培养耐心，在关键时刻再全力出击。幸运方向：东南。' },
+  '火牛': { traits: '勤勉坚韧，外表沉稳内心炽热，厚积薄发型人才', advice: '你的力量在于持久。不必羡慕别人的速度，稳步前行终将抵达。注意劳逸结合，别把自己逼太紧。幸运方向：南方。' },
+  '炎龙': { traits: '气势磅礴，天生领袖，举手投足间自带王者风范', advice: '龙行天下，但高处不胜寒。多倾听身边人的声音，柔和的领导力比强硬更持久。幸运方向：东方。' },
+  '焰马': { traits: '冰火交融，外表冷静内心狂热，是矛盾的魅力体', advice: '你拥有冰与火的双重力量，学会在两种极端之间切换自如是你的课题。艺术和哲学领域会让你发光。幸运方向：西南。' },
+  '青龙': { traits: '生生不息，仁慈宽厚，具有强大的成长力和创造力', advice: '你是天生的培育者，适合教育、医疗、环保等领域。记住在滋养他人的同时也要滋养自己。幸运方向：东方。' },
+  '彩雉': { traits: '绚丽多彩，才华横溢，善于在人群中展现独特魅力', advice: '你的才华需要舞台，大胆展示自己吧。但注意不要过于分散精力，专注一个方向才能飞得更高。幸运方向：东南。' },
+  '玄龟': { traits: '智慧深沉，稳扎稳打，是团队中最可靠的定海神针', advice: '龟虽寿，但也要偶尔伸出头来看看世界的变化。保持学习，你的智慧加上灵活应变将无往不利。幸运方向：北方。' },
+  '灵猴': { traits: '机敏聪慧，反应迅速，善于在复杂局面中找到突破口', advice: '你的聪明才智无人能及，但切记小聪明不如大智慧。沉下心来深耕一个领域，你将不可限量。幸运方向：西方。' },
+  '翠鹿': { traits: '灵动优雅，直觉敏锐，拥有感知美好事物的天赋', advice: '你的直觉往往是对的，相信它。适合从事艺术、设计、心理咨询等需要敏锐感知的工作。幸运方向：东北。' },
+  '玄蛇': { traits: '深邃睿智，洞察人心，像深渊一样让人看不透却充满吸引力', advice: '你的深度是最大的魅力，但不要把自己藏得太深。适时展露内心，会收获意想不到的温暖。幸运方向：北方。' },
+  '冥蛇': { traits: '鬼魅神秘，直觉超强，行走在光明与黑暗的边缘', advice: '你天生能看见别人看不见的东西，这份天赋请善用。但不要沉溺于阴暗面，光明同样值得探索。幸运方向：西北。' },
+  '河马': { traits: '外柔内刚，表面温和实则力量惊人，不鸣则已一鸣惊人', advice: '不要低估自己的力量，该出手时就出手。你的韧性是最宝贵的资产，没有你扛不过去的坎。幸运方向：中央。' },
+  '白鲤': { traits: '纯净坚韧，逆流而上，是默默努力终将化龙的潜力股', advice: '鲤鱼跃龙门需要积累，你正在正确的道路上。保持信念，属于你的时机终将到来。幸运方向：北方。' },
+  '灵狐': { traits: '聪慧灵动，适应力强，总能在变化中找到生存之道', advice: '你的适应力是天赋，但不要因此失去自我。在随波逐流和坚持本心之间找到平衡。幸运方向：东北。' },
+  '麒麟': { traits: '仁慈祥瑞，稳重可靠，是众人心中值得信赖的存在', advice: '你的稳重是稀世之宝，在这个浮躁的时代尤为珍贵。继续做你自己，好运自会降临。幸运方向：中央。' },
+  '熔岩龟': { traits: '外冷内热，坚毅不屈，拥有火山般积蓄待发的力量', advice: '你积蓄的力量终将喷薄而出，在那之前请耐心等待。学会释放情绪，压抑太久反而不好。幸运方向：南方。' },
+  '金牛': { traits: '坚定不移，价值导向，对品质和原则有着执着的追求', advice: '你的坚持让你值得信赖，但偶尔的变通也是一种智慧。财务和投资领域会让你大放异彩。幸运方向：西方。' },
+  '地龙': { traits: '潜藏深厚，不显山露水却拥有改变地貌的力量', advice: '你是隐藏的大佬，不鸣则已一鸣惊人。相信自己，不要总是躲在幕后。幸运方向：北方。' },
+  '山鹿': { traits: '温和而坚定，与自然和谐共生，拥有治愈他人的能力', advice: '你的温和力量如春风化雨，适合从事疗愈、教育、公益事业。照顾好自己，才能更好地照顾他人。幸运方向：东北。' },
+  '白虎': { traits: '锐利威严，杀伐果断，是天生的规则制定者和守护者', advice: '你的锋芒是武器也是铠甲，但刚极易折。学会以柔克刚，你的力量会更持久。适合法律、军事、管理领域。幸运方向：西方。' },
+  '金鹏': { traits: '志向高远，目光如炬，展翅之间便有席卷天下之势', advice: '大鹏一日同风起，你的视野决定了你的高度。不要被眼前的小事困扰，你的征途是星辰大海。幸运方向：西北。' },
+  '穿山甲': { traits: '专注执着，善于钻研，能在单一领域挖到别人无法企及的深度', advice: '你的专注力是超级武器，深耕一个领域你会成为顶尖专家。偶尔也要抬头看看周围的世界。幸运方向：西南。' },
+  '银狼': { traits: '孤高冷傲，忠诚重义，是独行与群居之间最完美的平衡者', advice: '你既能独当一面又能团队协作，这是稀有的品质。保持你的原则，但不要拒绝善意的靠近。幸运方向：西北。' },
+  '白猿': { traits: '灵巧多变，善于学习和模仿，总能快速掌握新技能', advice: '你的学习能力让人羡慕，但博而不精是大忌。选定一个方向深入下去，你将成为大师。幸运方向：西方。' }
+};
+
+// ========== 状态 ==========
+let currentQuestion = 0;
+let answers = {};
+let selectedOption = null;
+
+// ========== 初始化背景粒子 ==========
+function initParticles() {
+  const container = document.getElementById('bgParticles');
+  const colors = ['#c9973a', '#d4a853', '#8b6914', '#f0d78c', '#a08050'];
+  for (let i = 0; i < 35; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.width = p.style.height = (Math.random() * 4 + 1) + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDuration = (Math.random() * 12 + 8) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    container.appendChild(p);
+  }
+}
+
+// ========== 渲染题目 ==========
+function renderQuestion() {
+  const q = questions[currentQuestion];
+  const container = document.getElementById('questionsContainer');
+  const btnRow = document.getElementById('btnRow');
+  const progressFill = document.getElementById('progressFill');
+  const progressNum = document.getElementById('progressNum');
+  
+  selectedOption = answers[q.id] || null;
+  
+  container.innerHTML = `
+    <div class="question-wrap active">
+      <div class="question-number">第 ${q.id} 问</div>
+      <div class="question-text">${q.text}</div>
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <button class="option-btn ${selectedOption === i ? 'selected' : ''}"
+                  onclick="selectOption(${i})" data-idx="${i}">
+            <span class="option-icon">${opt.icon}</span>
+            <span>${opt.text}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  progressFill.style.width = ((currentQuestion + 1) / questions.length * 100) + '%';
+  progressNum.textContent = `${currentQuestion + 1}/${questions.length}`;
+
+  btnRow.innerHTML = `
+    ${currentQuestion > 0 ? '<button class="btn btn-prev" onclick="prevQuestion()">← 上一题</button>' : ''}
+    ${currentQuestion < questions.length - 1
+      ? `<button class="btn btn-next" onclick="nextQuestion()" ${selectedOption === null ? 'disabled' : ''}>下一题 →</button>`
+      : `<button class="btn btn-submit" onclick="submitTest()" ${selectedOption === null ? 'disabled' : ''}>✦ 揭晓命格 ✦</button>`
+    }
+  `;
+}
+
+function selectOption(idx) {
+  selectedOption = idx;
+  answers[questions[currentQuestion].id] = idx;
+  
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.idx) === idx);
+  });
+  
+  const nextBtn = document.querySelector('.btn-next, .btn-submit');
+  if (nextBtn) nextBtn.disabled = false;
+}
+
+function nextQuestion() {
+  if (selectedOption === null) return;
+  if (currentQuestion < questions.length - 1) {
+    currentQuestion++;
+    renderQuestion();
+    document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function prevQuestion() {
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    renderQuestion();
+    document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// ========== 计算结果 ==========
+function calculateResult() {
+  const scores = { fire: 0, wood: 0, water: 0, earth: 0, metal: 0 };
+  
+  for (const [qId, optIdx] of Object.entries(answers)) {
+    const q = questions.find(q => q.id === parseInt(qId));
+    if (q && q.options[optIdx]) {
+      scores[q.options[optIdx].value]++;
+    }
+  }
+
+  // 排序取前两名
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const primary = sorted[0][0];
+  const secondary = sorted[1][0];
+  
+  const subKey = `${primary}_${secondary}`;
+  const mapping = elementMapping[primary];
+  
+  // 查找匹配的子类型，找不到就用 primary_primary
+  let subType = mapping.subTypes[subKey];
+  if (!subType) {
+    // 尝试反向匹配
+    const reverseKey = `${primary}_${primary}`;
+    subType = mapping.subTypes[reverseKey] || mapping.subTypes[Object.keys(mapping.subTypes)[0]];
+  }
+
+  return {
+    primary,
+    secondary,
+    scores,
+    subType,
+    elementName: mapping.name,
+    maxScore: questions.length
+  };
+}
+
+// ========== 渲染结果 ==========
+function renderResult(result) {
+  const { primary, secondary, scores, subType, elementName } = result;
+  const desc = animalDescriptions[subType.animal] || { traits: '独特而神秘的存在', advice: '保持你的独特性，你的道路由你自己开创。' };
+
+  // 隐藏题目卡片
+  document.getElementById('questionCard').style.display = 'none';
+  
+  // 显示结果
+  const resultCard = document.getElementById('resultCard');
+  resultCard.classList.add('show');
+
+  document.getElementById('resultIcon').textContent = subType.icon;
+  document.getElementById('resultTitle').innerHTML = `<span style="color:${subType.color}">${subType.name}</span> · ${subType.animal}`;
+  document.getElementById('resultSubtitle').textContent = `五行属${elementName} · 主${elementName}副${elementMapping[secondary].name}`;
+
+  // 五行条
+  const barColors = { fire: '#ff4d2e', wood: '#4caf50', water: '#2196f3', earth: '#8d6e63', metal: '#bdbdbd' };
+  const barLabels = { fire: '火', wood: '木', water: '水', earth: '土', metal: '金' };
+  document.getElementById('elementBars').innerHTML = Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, val]) => `
+      <div class="element-bar-row">
+        <div class="element-label">${barLabels[key]}</div>
+        <div class="element-track">
+          <div class="element-fill" style="width:0%;background:${barColors[key]};"
+               data-width="${(val / result.maxScore * 100)}"></div>
+        </div>
+        <div style="font-size:0.8rem;color:#8a8070;width:30px;text-align:left;">${val}</div>
+      </div>
+    `).join('');
+
+  // 特征网格
+  document.getElementById('featureGrid').innerHTML = `
+    <div class="feature-item">
+      <h4>🔮 核心特质</h4>
+      <p>${desc.traits}</p>
+    </div>
+    <div class="feature-item">
+      <h4>🐾 灵兽属性</h4>
+      <p>你的守护灵兽是 <strong style="color:${subType.color}">${subType.animal}</strong>，五行属<strong>${elementName}</strong>，${subType.name}之相</p>
+    </div>
+    <div class="feature-item">
+      <h4>⚡ 能量特征</h4>
+      <p>主${elementName}（${scores[primary]}分）副${elementMapping[secondary].name}（${scores[secondary]}分），${scores[primary] >= 5 ? '五行属性极为鲜明' : scores[primary] >= 3 ? '五行属性较为平衡' : '五行能量分布均匀'}</p>
+    </div>
+    <div class="feature-item">
+      <h4>🌟 相生相克</h4>
+      <p>${getElementRelation(primary)}</p>
+    </div>
+  `;
+
+  // 建议
+  document.getElementById('adviceSection').innerHTML = `
+    <h3>📜 命格箴言</h3>
+    <ul>
+      <li>${desc.advice}</li>
+      ${getExtraAdvice(primary)}
+    </ul>
+  `;
+
+  resultCard.scrollIntoView({ behavior: 'smooth' });
+
+  // 动画填充条
+  setTimeout(() => {
+    document.querySelectorAll('.element-fill').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  }, 300);
+}
+
+function getElementRelation(primary) {
+  const relations = {
+    fire: '火生土，火克金。与水相遇则相克，与木相遇则相生。适合与属木、属土之人相处。',
+    wood: '木生火，木克土。与金相遇则相克，与水相遇则相生。适合与属水、属火之人相处。',
+    water: '水生木，水克火。与土相遇则相克，与金相遇则相生。适合与属金、属木之人相处。',
+    earth: '土生金，土克水。与木相遇则相克，与火相遇则相生。适合与属火、属金之人相处。',
+    metal: '金生水，金克木。与火相遇则相克，与土相遇则相生。适合与属土、属水之人相处。'
+  };
+  return relations[primary] || '';
+}
+
+function getExtraAdvice(primary) {
+  const advices = {
+    fire: '<li>火命之人需注意心脏和血液循环健康，避免过度劳累和情绪激动</li><li>宜佩戴木质饰品（木生火），居所宜朝南，多亲近阳光</li>',
+    wood: '<li>木命之人需注意肝胆健康，保持情绪舒畅，避免长期压抑</li><li>宜多亲近自然和水源（水生木），居所宜有绿植环绕</li>',
+    water: '<li>水命之人需注意肾脏和泌尿系统，保持充足睡眠，避免过度消耗</li><li>宜佩戴金属饰品（金生水），居所宜近水，保持环境湿润</li>',
+    earth: '<li>土命之人需注意脾胃消化，饮食规律，避免思虑过度</li><li>宜多接触阳光和温暖（火生土），居所宜稳定，不宜频繁搬迁</li>',
+    metal: '<li>金命之人需注意肺部和呼吸系统，保持空气清新，避免吸烟</li><li>宜亲近大地和自然（土生金），居所宜整洁有序，简约大方</li>'
+  };
+  return advices[primary] || '';
+}
+
+function submitTest() {
+  if (selectedOption === null) return;
+  answers[questions[currentQuestion].id] = selectedOption;
+  
+  // 检查是否全部答完
+  if (Object.keys(answers).length < questions.length) {
+    alert('请回答完所有题目后再揭晓命格');
+    return;
+  }
+
+  // 显示加载动画
+  document.getElementById('loadingOverlay').classList.add('show');
+  
+  setTimeout(() => {
+    const result = calculateResult();
+    document.getElementById('loadingOverlay').classList.remove('show');
+    renderResult(result);
+  }, 1800);
+}
+
+function restartTest() {
+  currentQuestion = 0;
+  answers = {};
+  selectedOption = null;
+  document.getElementById('questionCard').style.display = '';
+  document.getElementById('resultCard').classList.remove('show');
+  renderQuestion();
+  document.getElementById('questionCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ========== 启动 ==========
+initParticles();
+renderQuestion();
+</script>
+</body>
+</html>

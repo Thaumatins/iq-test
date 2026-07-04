@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>IQ 快速评估</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    background: #0b0e14; color: #ccd6e0;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  }
+  .container { width: 100%; max-width: 560px; padding: 14px; }
+
+  .header { text-align: center; padding: 28px 14px 14px; }
+  .header .logo { font-size: 38px; }
+  .header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; margin-top: 4px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header p { font-size: 0.75rem; color: #5a6478; margin-top: 2px; }
+
+  .card {
+    background: #111620; border: 1px solid #1e293b;
+    border-radius: 16px; padding: 22px 18px; margin-bottom: 10px;
+  }
+
+  .top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .top-row .count { font-size: 0.72rem; color: #5a6478; min-width: 36px; }
+  .top-row .bar { flex: 1; height: 3px; background: #1e293b; border-radius: 2px; overflow: hidden; }
+  .top-row .bar div { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width 0.4s; }
+  .top-row .timer { font-size: 0.72rem; color: #5a6478; min-width: 44px; text-align: right; }
+
+  .q-wrap { display: none; }
+  .q-wrap.active { display: block; animation: up 0.3s ease; }
+  @keyframes up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .q-text { font-size: 1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 18px; line-height: 1.7; }
+
+  .options { display: flex; flex-direction: column; gap: 7px; }
+  .opt-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 11px 14px;
+    background: rgba(255,255,255,0.02); border: 1px solid #1e293b;
+    border-radius: 10px; color: #8899aa; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s; text-align: left; font-family: inherit;
+  }
+  .opt-btn:hover { background: rgba(96,165,250,0.06); border-color: rgba(96,165,250,0.3); }
+  .opt-btn.selected { background: rgba(96,165,250,0.12); border-color: #60a5fa; color: #93c5fd; }
+  .opt-idx { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #5a6478; flex-shrink: 0; }
+  .opt-btn.selected .opt-idx { background: #60a5fa; color: #fff; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 18px; justify-content: center; }
+  .btn {
+    padding: 9px 24px; border-radius: 20px; font-size: 0.84rem; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.25s; font-family: inherit;
+  }
+  .btn-back { background: transparent; border: 1px solid #1e293b; color: #5a6478; }
+  .btn-back:hover { border-color: #60a5fa; color: #60a5fa; }
+  .btn-go { background: #60a5fa; color: #fff; }
+  .btn-go:hover { background: #3b82f6; }
+  .btn-go:disabled { opacity: 0.25; cursor: not-allowed; }
+  .btn-finish { background: linear-gradient(135deg, #a78bfa, #60a5fa); color: #fff; font-size: 0.9rem; padding: 10px 32px; }
+  .btn-finish:hover { opacity: 0.85; }
+  .btn-finish:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  /* 结果 */
+  .result { display: none; }
+  .result.show { display: block; animation: up 0.5s ease; }
+  .r-top { text-align: center; padding: 12px 0; }
+  .r-score { font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .r-label { font-size: 0.72rem; color: #5a6478; letter-spacing: 2px; }
+  .r-title { font-size: 1.15rem; font-weight: 700; margin-top: 6px; }
+  .r-sub { font-size: 0.78rem; color: #5a6478; margin-top: 2px; }
+
+  .r-bar-wrap { margin: 12px 0; position: relative; }
+  .r-bar-ticks { display: flex; justify-content: space-between; font-size: 0.6rem; color: #3a4458; margin-bottom: 3px; padding: 0 2px; }
+  .r-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #ef4444, #f59e0b 25%, #84cc16 50%, #60a5fa 75%, #a78bfa); position: relative; }
+  .r-dot { position: absolute; top: -5px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid #60a5fa; transform: translateX(-50%); transition: left 1s ease; box-shadow: 0 0 12px rgba(96,165,250,0.4); }
+
+  .sec-title { font-size: 0.8rem; font-weight: 700; color: #a78bfa; letter-spacing: 2px; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #1e293b; }
+  .info-box { background: rgba(96,165,250,0.04); border: 1px solid rgba(96,165,250,0.08); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+  .info-box p, .info-box li { font-size: 0.82rem; color: #8899aa; line-height: 1.7; }
+  .info-box ul { list-style: none; padding: 0; }
+  .info-box li { padding: 3px 0 3px 14px; position: relative; }
+  .info-box li::before { content: '▸'; position: absolute; left: 0; color: #60a5fa; font-size: 0.6rem; top: 6px; }
+
+  .btn-again { display: block; margin: 14px auto 0; background: transparent; border: 1px solid #1e293b; color: #5a6478; padding: 8px 20px; border-radius: 18px; font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+  .btn-again:hover { border-color: #a78bfa; color: #a78bfa; }
+
+  .footnote { text-align: center; padding: 10px; font-size: 0.62rem; color: #2a3040; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">🧬</div>
+    <h1>IQ 快速评估</h1>
+    <p>Raven's Progressive Matrices · 简化版</p>
+  </div>
+
+  <div class="card" id="qCard">
+    <div class="top-row">
+      <span class="count" id="qNum">1/12</span>
+      <div class="bar"><div id="qBar"></div></div>
+      <span class="timer" id="qTime">⏱ 0:00</span>
+    </div>
+    <div id="qContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <div class="card result" id="rCard">
+    <div class="r-top">
+      <div class="r-score" id="rScore">--</div>
+      <div class="r-label">IQ 评估分数</div>
+      <div class="r-title" id="rTitle"></div>
+      <div class="r-sub" id="rSub"></div>
+    </div>
+    <div class="r-bar-wrap">
+      <div class="r-bar-ticks"><span>70</span><span>85</span><span>100</span><span>115</span><span>130</span></div>
+      <div class="r-bar"><div class="r-dot" id="rDot" style="left:50%"></div></div>
+    </div>
+    <div class="sec-title">📋 评估报告</div>
+    <div class="info-box" id="rReport"></div>
+    <div class="sec-title">💡 提升建议</div>
+    <div class="info-box" id="rAdvice"></div>
+    <button class="btn-again" onclick="restart()">⟳ 重新评估</button>
+  </div>
+  <div class="footnote">※ 本测试仅供娱乐参考，不构成临床诊断依据</div>
+</div>
+
+<script>
+const Q = [
+  { text: '如果所有的猫都怕水，小白是一只猫，那么以下哪项一定正确？', opts: ['小白喜欢水','小白怕水','有些猫不怕水','小白不是猫'], ans: 1 },
+  { text: '找出规律：2, 6, 12, 20, ( ? )', opts: ['26','28','30','32'], ans: 2 },
+  { text: '一个房间里有 4 个角落，每个角落有一只猫，每只猫对面有 3 只猫，每只猫尾巴上还有一只猫。房间里一共有多少只猫？', opts: ['4只','8只','16只','12只'], ans: 0 },
+  { text: '一位农民有 17 只羊，除了 9 只以外都死了。还剩几只？', opts: ['8只','9只','17只','0只'], ans: 1 },
+  { text: '5 个机器 5 分钟生产 5 个零件，100 个机器生产 100 个零件需要多少分钟？', opts: ['100分钟','5分钟','20分钟','1分钟'], ans: 1 },
+  { text: '一个正方体有 6 个面，每个面都是什么形状？', opts: ['长方形','正方形','三角形','六边形'], ans: 1 },
+  { text: '医生给你 3 片药，每半小时吃一片，全部吃完需要多久？', opts: ['1.5小时','1小时','2小时','30分钟'], ans: 1 },
+  { text: '如果前天是星期一，那么后天是星期几？', opts: ['星期三','星期四','星期五','星期六'], ans: 2 },
+  { text: '所有的 A 都是 B，有些 C 是 B。以下哪项一定成立？', opts: ['有些C是A','所有A是C','有些B是A','无法确定'], ans: 3 },
+  { text: '一个数加上它的一半等于 18，这个数是多少？', opts: ['9','12','10','15'], ans: 1 },
+  { text: '下列哪个词与其他三个不属于同一类别？', opts: ['钢琴','小提琴','吉他','笛子'], ans: 0 },
+  { text: '小红比小明大，小刚比小红小。以下哪项一定正确？', opts: ['小刚比小明大','小明比小刚大','小刚和小明一样大','无法比较小明和小刚'], ans: 3 }
+];
+
+let cur=0, ans={}, sel=null, startTime=0, timerId=null;
+
+function render() {
+  clearInterval(timerId);
+  const q = Q[cur]; sel = ans[q.text] ?? null;
+  document.getElementById('qContainer').innerHTML = `
+    <div class="q-wrap active"><div class="q-text">${q.text}</div><div class="options">
+    ${q.opts.map((o,i)=>`<button class="opt-btn${sel===i?' selected':''}" onclick="pick(${i})"><span class="opt-idx">${'ABCD'[i]}</span>${o}</button>`).join('')}
+    </div></div>`;
+  document.getElementById('qBar').style.width = ((cur+1)/Q.length*100)+'%';
+  document.getElementById('qNum').textContent = `${cur+1}/${Q.length}`;
+  const last = cur===Q.length-1;
+  document.getElementById('btnRow').innerHTML = `
+    ${cur>0?`<button class="btn btn-back" onclick="prev()">← 上一题</button>`:''}
+    ${last
+      ?`<button class="btn btn-finish" id="nextBtn" onclick="done()" ${sel===null?'disabled':''}>提交评估</button>`
+      :`<button class="btn btn-go" id="nextBtn" onclick="next()" ${sel===null?'disabled':''}>下一题 →</button>`}`;
+  updateTime();
+  timerId = setInterval(updateTime, 1000);
+}
+function updateTime() {
+  const el = document.getElementById('qTime');
+  if (!startTime) { el.textContent = '⏱ 0:00'; return; }
+  const s = Math.floor((Date.now()-startTime)/1000);
+  el.textContent = `⏱ ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+function pick(i) { sel=i; ans[Q[cur].text]=i; document.querySelectorAll('.opt-btn').forEach(b=>b.classList.toggle('selected',+b.dataset.idx===i)); document.getElementById('nextBtn').disabled=false; }
+function next() { if(sel===null)return; cur++; render(); document.getElementById('qCard').scrollIntoView({behavior:'smooth'}); }
+function prev() { cur--; render(); document.getElementById('qCard').scrollIntoView({behavior:'smooth'}); }
+
+function done() {
+  if(sel===null)return; ans[Q[cur].text]=sel; clearInterval(timerId);
+  let correct=0; for(const q of Q) if(ans[q.text]===q.answer) correct++;
+  const pct = correct/Q.length;
+  const iq = Math.round(75 + pct * 75);
+  const elapsed = Math.round((Date.now()-startTime)/1000);
+  const timeStr = `${Math.floor(elapsed/60)}分${elapsed%60}秒`;
+
+  document.getElementById('qCard').style.display='none';
+  const rc = document.getElementById('rCard'); rc.classList.add('show');
+  document.getElementById('rScore').textContent = iq;
+  document.getElementById('rTitle').textContent = rank(iq);
+  document.getElementById('rSub').textContent = `正确 ${correct}/${Q.length} · 用时 ${timeStr}`;
+  setTimeout(()=>{ document.getElementById('rDot').style.left = ((iq-70)/60*100)+'%'; }, 200);
+
+  const report = getReport(correct, iq);
+  document.getElementById('rReport').innerHTML = `<p>${report.desc}</p>`;
+  document.getElementById('rAdvice').innerHTML = `<ul>${report.advice.map(a=>`<li>${a}</li>`).join('')}</ul>`;
+  rc.scrollIntoView({behavior:'smooth'});
+}
+
+function rank(iq) {
+  if(iq>=130) return '🔵 非常优秀';
+  if(iq>=115) return '🟢 中上水平';
+  if(iq>=100) return '⚪ 平均水平';
+  if(iq>=85) return '🟡 中下水平';
+  return '🔴 有待提升';
+}
+
+function getReport(correct, iq) {
+  if(correct>=11) return { desc:`你答对了 ${correct} 题，表现出优秀的逻辑推理和数学能力。在标准 IQ 量表中，这个成绩对应约第 ${Math.round(pct(iq))} 百分位，意味着你超过了大约 ${Math.round(pct(iq))}% 的同龄人。你的核心优势在于抽象思维和快速判断。`, advice:['继续保持好奇心，可以尝试挑战更高难度的逻辑题','推荐阅读《思考，快与慢》深入了解自己的思维模式','多参与需要快速决策的活动（如策略游戏）保持思维敏锐'] };
+  if(correct>=8) return { desc:`你答对了 ${correct} 题，处于中上水平。你在大多数逻辑推理题上表现不错，偶尔在需要细致分析的问题上失分。在标准 IQ 量表中约处于第 ${Math.round(pct(iq))} 百分位。你的思维模式偏向实用主义，能够高效解决日常问题。`, advice:['每天花 10 分钟做逻辑推理练习，坚持一个月会有明显提升','注意题目中的细节——有时候答案就藏在题目本身','尝试用纸笔辅助思考，把抽象问题具象化'] };
+  if(correct>=5) return { desc:`你答对了 ${correct} 题，处于中等水平。你在直观判断类题目上表现不错，但在需要多步推理的问题上还有提升空间。约处于第 ${Math.round(pct(iq))} 百分位。好消息是：智力可以通过训练显著提升。`, advice:['从简单的逻辑题开始，逐步建立信心和思维习惯','做题时放慢速度，确保理解题意再作答','保证充足睡眠——睡眠质量直接影响逻辑思维能力'] };
+  return { desc:`你答对了 ${correct} 题。可能你不太习惯这类逻辑推理题，或者答题时状态不佳。分数不等于能力——很多人只是在"考试思维"上需要一些练习。约处于第 ${Math.round(pct(iq))} 百分位。`, advice:['不要灰心，这类题目更多反映的是"熟练度"而非"聪明程度"','从最基础的逻辑思维训练开始，循序渐进','找一个安静的时间重新做一次，状态对结果影响很大'] };
+}
+
+function pct(iq) { return Math.round((1 - (1/(1+Math.exp((iq-100)/15)))*2)*100); }
+
+function restart() { clearInterval(timerId); cur=0; ans={}; sel=null; startTime=0; document.getElementById('qCard').style.display=''; document.getElementById('rCard').classList.remove('show'); render(); document.getElementById('qCard').scrollIntoView({behavior:'smooth'}); }
+
+// 启动：点击第一题任意选项时开始计时
+const origPick = pick;
+pick = function(i) {
+  if(!startTime) startTime = Date.now();
+  origPick(i);
+};
+render();
+</script>
+</body>
+</html>

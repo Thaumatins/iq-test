@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>脑力大挑战 · 趣味智商测试</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #e8e8f0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .container { width: 100%; max-width: 600px; padding: 16px; }
+
+  .header { text-align: center; padding: 36px 16px 20px; }
+  .header .emoji { font-size: 52px; animation: bounce 1.5s ease-in-out infinite; display: inline-block; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  .header h1 {
+    font-size: 1.7rem; font-weight: 900;
+    background: linear-gradient(135deg, #f093fb, #f5576c, #ffd452);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; letter-spacing: 2px; margin-top: 6px;
+  }
+  .header p { font-size: 0.82rem; color: #8888aa; margin-top: 4px; }
+
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 26px 22px; margin-bottom: 14px;
+    backdrop-filter: blur(12px);
+  }
+
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+  .progress-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #f093fb, #ffd452); transition: width 0.5s; }
+  .progress-num { font-size: 0.78rem; color: #8888aa; min-width: 44px; text-align: right; }
+
+  .q-wrap { display: none; }
+  .q-wrap.active { display: block; animation: fadeUp 0.35s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .q-tag { display: inline-block; padding: 2px 10px; border-radius: 8px; font-size: 0.65rem; letter-spacing: 2px; margin-bottom: 10px; background: rgba(240,147,251,0.12); color: #f093fb; }
+  .q-text { font-size: 1.05rem; font-weight: 600; color: #f0f0f8; margin-bottom: 22px; line-height: 1.75; }
+
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 13px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: #c0c0d4; font-size: 0.88rem;
+    cursor: pointer; transition: all 0.25s;
+    text-align: left; font-family: inherit;
+  }
+  .opt-btn:hover { background: rgba(240,147,251,0.08); border-color: rgba(240,147,251,0.3); color: #e0e0f0; }
+  .opt-btn.selected { background: rgba(240,147,251,0.15); border-color: #f093fb; color: #f5a0ff; }
+  .opt-emoji { font-size: 1.3rem; flex-shrink: 0; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 22px; justify-content: center; }
+  .btn {
+    padding: 10px 26px; border-radius: 22px;
+    font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.3s; font-family: inherit; letter-spacing: 1px;
+  }
+  .btn-prev { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #8888aa; }
+  .btn-prev:hover { border-color: #f093fb; color: #f093fb; }
+  .btn-next { background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff; }
+  .btn-next:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-next:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+  .btn-submit { background: linear-gradient(135deg, #ffd452, #f5576c); color: #1a1a2e; font-size: 0.95rem; padding: 12px 38px; font-weight: 700; }
+  .btn-submit:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  /* 结果 */
+  .result-wrap { display: none; }
+  .result-wrap.show { display: block; animation: fadeUp 0.6s ease; }
+  .result-hero { text-align: center; padding: 16px 0; }
+  .result-emoji { font-size: 70px; display: block; animation: popIn 0.7s ease; }
+  @keyframes popIn { 0%{transform:scale(0)rotate(-15deg);opacity:0} 60%{transform:scale(1.1)rotate(3deg)} 100%{transform:scale(1)rotate(0);opacity:1} }
+  .result-score { font-size: 3.2rem; font-weight: 900; background: linear-gradient(135deg, #ffd452, #f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .result-title { font-size: 1.3rem; font-weight: 700; margin-top: 6px; }
+  .result-desc { font-size: 0.85rem; color: #8888aa; margin-top: 4px; line-height: 1.6; }
+
+  .section-title { font-size: 0.88rem; font-weight: 700; color: #f093fb; letter-spacing: 2px; margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
+  .badge { padding: 5px 14px; border-radius: 14px; font-size: 0.75rem; font-weight: 600; background: rgba(240,147,251,0.1); border: 1px solid rgba(240,147,251,0.2); color: #f093fb; }
+
+  .tip-box { background: rgba(255,212,82,0.05); border: 1px solid rgba(255,212,82,0.12); border-radius: 14px; padding: 16px; margin-bottom: 10px; }
+  .tip-box p, .tip-box li { font-size: 0.84rem; color: #b0b0c8; line-height: 1.7; }
+  .tip-box ul { list-style: none; padding: 0; }
+  .tip-box li { padding: 4px 0 4px 16px; position: relative; }
+  .tip-box li::before { content: '✦'; position: absolute; left: 0; color: #ffd452; font-size: 0.5rem; top: 8px; }
+
+  .btn-restart {
+    display: block; margin: 18px auto 0;
+    background: transparent; border: 1px solid rgba(255,255,255,0.15);
+    color: #8888aa; padding: 9px 22px; border-radius: 20px;
+    font-size: 0.82rem; cursor: pointer; font-family: inherit;
+  }
+  .btn-restart:hover { border-color: #f093fb; color: #f093fb; }
+
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.4rem; }
+    .card { padding: 20px 14px; }
+    .q-text { font-size: 0.95rem; }
+    .opt-btn { padding: 11px 14px; font-size: 0.82rem; }
+    .result-score { font-size: 2.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="emoji">🧠</div>
+    <h1>脑力大挑战</h1>
+    <p>15 道趣味题 · 测测你的脑洞有多大</p>
+  </div>
+
+  <!-- 题目卡片 -->
+  <div class="card" id="qCard">
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-num" id="progressNum">1/15</div>
+    </div>
+    <div id="qContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="card result-wrap" id="rCard">
+    <div class="result-hero">
+      <span class="result-emoji" id="rEmoji"></span>
+      <div class="result-score" id="rScore"></div>
+      <div class="result-title" id="rTitle"></div>
+      <div class="result-desc" id="rDesc"></div>
+    </div>
+    <div class="badge-row" id="rBadges"></div>
+    <div class="section-title">📊 你的脑力画像</div>
+    <div class="tip-box" id="rProfile"></div>
+    <div class="section-title">💡 趣味建议</div>
+    <div class="tip-box" id="rAdvice"></div>
+    <button class="btn-restart" onclick="restart()">⟳ 再来一次</button>
+  </div>
+</div>
+
+<script>
+const Q = [
+  { text: '小明家有三个孩子，老大叫大毛，老二叫二毛，老三叫什么？', tag: '🧩 脑筋急转弯', opts: ['三毛', '小毛', '小明', '毛毛'], ans: 2 },
+  { text: '什么东西越洗越脏？', tag: '🧩 脑筋急转弯', opts: ['衣服', '水', '毛巾', '手'], ans: 1 },
+  { text: '1 + 1 在什么情况下等于 3？', tag: '🤣 趣味数学', opts: ['算错的时候', '二进制', '结婚后', '以上都对'], ans: 3 },
+  { text: '哪一种动物最没有方向感？', tag: '🐾 动物谜题', opts: ['麋鹿（迷路）', '企鹅', '蝙蝠', '鸽子'], ans: 0 },
+  { text: '小华的妈妈有三个孩子，第一个叫一月，第二个叫二月，第三个叫什么？', tag: '🧩 脑筋急转弯', opts: ['三月', '小华', '四月', '十二月'], ans: 1 },
+  { text: '26 个英文字母里，哪个字母最重？', tag: '🔤 字母谜题', opts: ['Z', 'W', 'N（因为 N 重）', 'G'], ans: 2 },
+  { text: '放一支铅笔在地上，要使任何人都无法跨过它，应该怎么做？', tag: '🧩 脑筋急转弯', opts: ['放在墙角', '放在悬崖边', '放在头顶', '折断它'], ans: 0 },
+  { text: '什么书你不可能在书店买到？', tag: '📚 文字游戏', opts: ['天书', '秘书', '遗书', '以上都是'], ans: 3 },
+  { text: '下雨天，没带伞的人拼命跑，带了伞的人反而慢慢走，为什么？', tag: '🤔 逻辑推理', opts: ['带伞的人不怕淋', '带伞的人在等人', '没带伞的是来送伞的', '带伞的人穿了雨衣'], ans: 2 },
+  { text: '如果昨天是明天的话就好了，那样今天就是星期五了。请问实际上今天是星期几？', tag: '📅 时间推理', opts: ['星期三', '星期四', '星期五', '星期日'], ans: 0 },
+  { text: '一个聋哑人去五金店买钉子，他把两个手指并拢敲在柜台上。接着一个盲人来买剪刀，他应该怎么做？', tag: '🧩 脑筋急转弯', opts: ['比剪刀手', '直接开口说', '比划剪东西', '指自己的眼睛'], ans: 1 },
+  { text: '什么东西你能看到，但永远摸不到？', tag: '🧩 脑筋急转弯', opts: ['镜子里的自己', '影子', '梦', '以上都是'], ans: 3 },
+  { text: '九个橙子分给十三个小朋友，怎么分才公平？', tag: '🤣 趣味数学', opts: ['榨成橙汁', '每人半个', '大的让小的', '猜拳决定'], ans: 0 },
+  { text: '太平洋正中间是什么？', tag: '🔤 文字游戏', opts: ['水', '鱼', '平', '岛'], ans: 2 },
+  { text: '什么东西往上升永远不下降？', tag: '🧩 脑筋急转弯', opts: ['气球', '年龄', '火箭', '烟雾'], ans: 1 }
+];
+
+let cur = 0, answers = {}, sel = null;
+
+function render() {
+  const q = Q[cur]; sel = answers[q.text] ?? null;
+  document.getElementById('qContainer').innerHTML = `
+    <div class="q-wrap active">
+      <div class="q-tag">${q.tag}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">
+        ${q.opts.map((o,i) => `
+          <button class="opt-btn ${sel===i?'selected':''}" onclick="pick(${i})">
+            <span class="opt-emoji">${['🅰️','🅱️','©️','🅳️'][i]}</span> ${o}
+          </button>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('progressFill').style.width = ((cur+1)/Q.length*100)+'%';
+  document.getElementById('progressNum').textContent = `${cur+1}/${Q.length}`;
+  const last = cur === Q.length-1;
+  document.getElementById('btnRow').innerHTML = `
+    ${cur>0?'<button class="btn btn-prev" onclick="prev()">← 上一题</button>':''}
+    ${last
+      ?`<button class="btn btn-submit" id="nextBtn" onclick="submit()" ${sel===null?'disabled':''}>🎉 看结果</button>`
+      :`<button class="btn btn-next" id="nextBtn" onclick="next()" ${sel===null?'disabled':''}>下一题 →</button>`}`;
+}
+
+function pick(i) { sel=i; answers[Q[cur].text]=i; document.querySelectorAll('.opt-btn').forEach(b=>b.classList.toggle('selected',+b.dataset.idx===i)); document.getElementById('nextBtn').disabled=false; }
+function next() { if(sel===null)return; cur++; render(); document.getElementById('qCard').scrollIntoView({behavior:'smooth'}); }
+function prev() { cur--; render(); document.getElementById('qCard').scrollIntoView({behavior:'smooth'}); }
+
+function submit() {
+  if(sel===null)return; answers[Q[cur].text]=sel;
+  let correct=0; for(let q of Q){ if(answers[q.text]===q.ans) correct++; }
+  const pct = correct/Q.length;
+  const iq = Math.round(70 + pct * 80);
+  const result = getResult(correct, iq);
+  document.getElementById('qCard').style.display='none';
+  const r = document.getElementById('rCard'); r.classList.add('show');
+  document.getElementById('rEmoji').textContent = result.emoji;
+  document.getElementById('rScore').textContent = iq;
+  document.getElementById('rTitle').textContent = result.title;
+  document.getElementById('rDesc').textContent = `答对 ${correct}/${Q.length} 题 · ${result.subtitle}`;
+  document.getElementById('rBadges').innerHTML = result.badges.map(b=>`<span class="badge">${b}</span>`).join('');
+  document.getElementById('rProfile').innerHTML = `<p>${result.profile}</p>`;
+  document.getElementById('rAdvice').innerHTML = `<ul>${result.advice.map(a=>`<li>${a}</li>`).join('')}</ul>`;
+  r.scrollIntoView({behavior:'smooth'});
+}
+
+function getResult(correct, iq) {
+  if (correct >= 14) return { emoji:'🦉', title:'脑洞之王', subtitle:'你的脑回路清奇，思路总能出其不意！', badges:['思维敏捷','脑洞清奇','逻辑鬼才'], profile:'你拥有极强的思维灵活性和幽默感，能在看似无解的问题中找到意想不到的答案。你适合做创意类工作，朋友聚会时你永远是最会活跃气氛的那个人。', advice:['继续保持你的好奇心和幽默感，这是你最宝贵的财富','可以尝试玩玩密室逃脱或剧本杀，你的脑回路会很适合','偶尔也给别人留点面子，别每次都第一个答出来 😂'] };
+  if (correct >= 11) return { emoji:'🦊', title:'机智达人', subtitle:'反应快、点子多，朋友眼中的聪明人！', badges:['反应敏捷','创意十足','气氛担当'], profile:'你的思维活跃度很高，总能从不同角度思考问题。面对脑筋急转弯，你的正确率相当不错，说明你善于跳出框架思考。', advice:['多做一些创意类的活动，比如即兴表演或头脑风暴','遇到难题时，你的第一直觉往往是对的','偶尔慢下来思考更深层次的问题，会有意外收获'] };
+  if (correct >= 8) return { emoji:'🐱', title:'潜力股', subtitle:'有灵光一闪的时刻，偶尔也会被套路~', badges:['偶有灵光','乐于思考','潜力无限'], profile:'你有时候能秒答出人意料的答案，有时候也会被题目绕进去。这说明你的思维还在成长中，多做一些趣味脑力训练会越来越好！', advice:['每天做几道脑筋急转弯，训练思维灵活性','试试换个角度看问题——答案往往在问题之外','别灰心，脑力是可以训练的，你已经在进步了'] };
+  if (correct >= 5) return { emoji:'🐶', title:'老实人', subtitle:'你是那种认真思考但容易被套路的好同学~', badges:['认真思考','踏实靠谱','偶尔脱线'], profile:'你习惯用常规思维去解决问题，这在大多数情况下是优点！但脑筋急转弯嘛，就是专门绕你的。你的强项在于认真和坚持。', advice:['偶尔放下逻辑，试试"反着来"思考','多看一些冷笑话和脑筋急转弯合集','你的认真是一种天赋，不要因为这次结果而怀疑自己'] };
+  return { emoji:'🐣', title:'呆萌新人', subtitle:'纯真可爱，你的脑回路需要一点"歪"训练！', badges:['天真可爱','纯真无邪','萌新上路'], profile:'你是一个真诚的人，习惯于直来直去的思考方式。脑筋急转弯的世界对你来说可能有点"不讲武德"，但这恰恰说明你心地纯良！', advice:['先从小红书/抖音的脑筋急转弯合集开始，慢慢培养"歪"思维','和朋友一起玩，听听他们是怎么想到答案的','纯真也是一种力量，这个世界需要你这样真诚的人 ❤️'] };
+}
+
+function restart() { cur=0; answers={}; sel=null; document.getElementById('qCard').style.display=''; document.getElementById('rCard').classList.remove('show'); render(); document.getElementById('qCard').scrollIntoView({behavior:'smooth'}); }
+
+render();
+</script>
+</body>
+</html>

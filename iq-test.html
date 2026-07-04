@@ -710,6 +710,7 @@ function renderQuestion() {
 }
 
 function selectOption(idx) {
+  selectedOpt = idx;
   answers[questions[currentQ].id] = idx;
   document.querySelectorAll('.opt-btn').forEach(b => {
     b.classList.toggle('selected', parseInt(b.dataset.idx) === idx);

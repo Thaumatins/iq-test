@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>文明摇篮 · 星球文明模拟器</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+    background: #05080f; color: #bcc8e0;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 30% 20%, rgba(100,140,220,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 60%, rgba(180,140,220,0.04) 0%, transparent 50%);
+  }
+  .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+  .star { position:absolute; background:#fff; border-radius:50%; animation:twinkle ease-in-out infinite; }
+  @keyframes twinkle { 0%,100%{opacity:0.15} 50%{opacity:0.7} }
+
+  .container { width:100%; max-width:560px; padding:12px; position:relative; z-index:1; }
+
+  .header { text-align:center; padding:24px 10px 12px; }
+  .header .planet {
+    width:80px; height:80px; border-radius:50%; margin:0 auto 8px;
+    transition: all 1.5s ease;
+    position:relative; overflow:hidden;
+  }
+  .header h1 { font-size:1.4rem; font-weight:800; letter-spacing:2px;
+    background:linear-gradient(135deg,#60a5fa,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .header .era { font-size:0.72rem; color:#5a6a80; letter-spacing:3px; margin-top:2px; }
+
+  .card {
+    background:rgba(12,16,28,0.9); border:1px solid rgba(60,80,120,0.2);
+    border-radius:16px; padding:18px 16px; margin-bottom:10px;
+    backdrop-filter:blur(10px);
+  }
+
+  /* 状态栏 */
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px; }
+  .stat {
+    text-align:center; padding:8px 4px;
+    background:rgba(255,255,255,0.02); border:1px solid rgba(60,80,120,0.12);
+    border-radius:10px;
+  }
+  .stat .val { font-size:1.1rem; font-weight:700; }
+  .stat .lbl { font-size:0.6rem; color:#5a6a80; margin-top:2px; letter-spacing:1px; }
+  .stat-bar-wrap { height:3px; background:rgba(255,255,255,0.05); border-radius:2px; margin-top:4px; overflow:hidden; }
+  .stat-bar { height:100%; border-radius:2px; transition:width 0.8s; }
+
+  /* 事件描述 */
+  .event { text-align:center; padding:10px 0; }
+  .event .icon { font-size:48px; margin-bottom:6px; }
+  .event .title { font-size:1rem; font-weight:700; color:#e0e8f8; margin-bottom:4px; line-height:1.5; }
+  .event .desc { font-size:0.8rem; color:#6a7a90; line-height:1.6; }
+
+  /* 选择 */
+  .choices { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .choice-btn {
+    width:100%; padding:12px 16px;
+    background:rgba(96,165,250,0.04); border:1px solid rgba(96,165,250,0.15);
+    border-radius:12px; color:#8899bb; font-size:0.85rem;
+    cursor:pointer; transition:all 0.25s;
+    text-align:left; font-family:inherit;
+    display:flex; align-items:center; gap:10px;
+  }
+  .choice-btn:hover { background:rgba(96,165,250,0.1); border-color:rgba(96,165,250,0.35); color:#a0b8e0; transform:translateX(3px); }
+  .choice-btn .c-icon { font-size:1.3rem; flex-shrink:0; }
+
+  /* 日志 */
+  .log-area { max-height:200px; overflow-y:auto; margin-top:8px; }
+  .log-area::-webkit-scrollbar { width:3px; }
+  .log-area::-webkit-scrollbar-thumb { background:rgba(96,165,250,0.2); border-radius:2px; }
+  .log-item {
+    font-size:0.72rem; color:#5a6a80; padding:3px 0;
+    border-bottom:1px solid rgba(255,255,255,0.02);
+    display:flex; gap:6px;
+  }
+  .log-item .l-time { color:#3a4a60; min-width:24px; }
+
+  /* 结束画面 */
+  .end-screen { display:none; text-align:center; padding:20px 0; }
+  .end-screen.show { display:block; animation: fadeIn 0.8s; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .end-screen .e-icon { font-size:72px; margin-bottom:10px; }
+  .end-screen .e-title { font-size:1.4rem; font-weight:800; margin-bottom:6px; }
+  .end-screen .e-desc { font-size:0.85rem; color:#6a7a90; line-height:1.7; margin-bottom:14px; }
+  .end-screen .e-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0; text-align:left; }
+  .end-screen .e-stat { padding:10px; background:rgba(255,255,255,0.02); border-radius:10px; border:1px solid rgba(60,80,120,0.1); }
+  .end-screen .e-stat .es-val { font-size:1.2rem; font-weight:700; }
+  .end-screen .e-stat .es-lbl { font-size:0.65rem; color:#5a6a80; }
+
+  .btn-restart {
+    display:inline-block; margin-top:12px; padding:10px 28px;
+    background:linear-gradient(135deg,#60a5fa,#a78bfa); color:#fff;
+    border:none; border-radius:22px; font-size:0.85rem; font-weight:600;
+    cursor:pointer; font-family:inherit; letter-spacing:1px;
+  }
+  .btn-restart:hover { opacity:0.85; }
+
+  @media (max-width:480px) {
+    .header h1 { font-size:1.2rem; }
+    .card { padding:14px 12px; }
+    .stats { grid-template-columns:repeat(4,1fr); }
+    .stat { padding:6px 2px; }
+    .stat .val { font-size:0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="planet" id="planet"></div>
+    <h1>文明摇篮</h1>
+    <div class="era" id="era">纪元前 · 原始星云</div>
+  </div>
+
+  <div class="card" id="gameCard">
+    <div class="stats">
+      <div class="stat">
+        <div class="val" style="color:#60a5fa" id="sPop">0</div>
+        <div class="lbl">人口</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="background:#60a5fa;width:0%" id="bPop"></div></div>
+      </div>
+      <div class="stat">
+        <div class="val" style="color:#f59e0b" id="sTech">0</div>
+        <div class="lbl">科技</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="background:#f59e0b;width:0%" id="bTech"></div></div>
+      </div>
+      <div class="stat">
+        <div class="val" style="color:#10b981" id="sCul">0</div>
+        <div class="lbl">文化</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="background:#10b981;width:0%" id="bCul"></div></div>
+      </div>
+      <div class="stat">
+        <div class="val" style="color:#ef4444" id="sChaos">0</div>
+        <div class="lbl">混沌</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="background:#ef4444;width:0%" id="bChaos"></div></div>
+      </div>
+    </div>
+    <div class="event" id="eventArea"></div>
+    <div class="choices" id="choicesArea"></div>
+    <div class="log-area" id="logArea"></div>
+  </div>
+
+  <div class="card end-screen" id="endCard">
+    <div class="e-icon" id="eIcon"></div>
+    <div class="e-title" id="eTitle"></div>
+    <div class="e-desc" id="eDesc"></div>
+    <div class="e-stats" id="eStats"></div>
+    <button class="btn-restart" onclick="location.reload()">⟳ 再次孕育文明</button>
+  </div>
+</div>
+
+<script>
+// ========== 状态 ==========
+let state = {
+  pop: 1, tech: 0, culture: 0, chaos: 0,
+  turn: 0, era: 'primordial', logs: [],
+  disasters: 0, goldenAges: 0,
+  planetColor: { r:80, g:60, b:120 }
+};
+
+// ========== 事件池 ==========
+const events = {
+  primordial: [
+    { id:'p1', icon:'🦠', title:'原始汤中出现了有机分子', desc:'温暖的浅海里，闪电劈过甲烷和氨气，第一批氨基酸悄然诞生。', choices:[
+      { icon:'🧪', text:'投入更多能量，加速化学反应', effects:{tech:2,chaos:1}, log:'你向原始汤注入能量，有机分子加速合成。' },
+      { icon:'🛡️', text:'保持稳定，让自然慢慢演化', effects:{pop:1,culture:1}, log:'你选择耐心等待，生命的脚步虽慢但稳。' },
+      { icon:'🔥', text:'引入剧烈的地质活动', effects:{chaos:3,tech:1}, log:'火山喷发！环境剧变，但带来了丰富的矿物质。' }
+    ]},
+    { id:'p2', icon:'🧬', title:'第一个单细胞生物出现了', desc:'在深海热泉口附近，一层脂质膜偶然包裹了一串RNA——第一个细胞诞生了。', choices:[
+      { icon:'🌊', text:'提供丰富的养分，让生命繁衍', effects:{pop:3,tech:1}, log:'海洋变成了生命的温床，单细胞生物迅速繁殖。' },
+      { icon:'❄️', text:'来一次冰河期，筛选最顽强的生命', effects:{tech:2,pop:-1,chaos:2}, log:'冰封万里，只有最强韧的微生物活了下来。' },
+      { icon:'☀️', text:'让阳光更充足，推动光合作用', effects:{tech:3,culture:1}, log:'第一批蓝藻开始利用阳光，大气中的氧气逐渐增多。' }
+    ]},
+    { id:'p3', icon:'🐟', title:'多细胞生命大爆发', desc:'寒武纪的海洋中，各种奇形怪状的生物突然涌现——这是生命史上最壮观的篇章。', choices:[
+      { icon:'🦴', text:'鼓励演化出坚硬的外壳和骨骼', effects:{tech:2,pop:2,chaos:1}, log:'三叶虫和奇虾统治了海洋，生物多样性飙升。' },
+      { icon:'🌿', text:'让植物率先登陆', effects:{culture:2,pop:2}, log:'苔藓和蕨类爬上了陆地，为动物登陆铺平了道路。' },
+      { icon:'💥', text:'放任捕食者军备竞赛', effects:{tech:3,chaos:3,pop:1}, log:'更大的嘴、更硬的壳、更快的速度——进化的齿轮疯狂转动。' }
+    ]}
+  ],
+  ancient: [
+    { id:'a1', icon:'🦎', title:'第一批动物爬上了陆地', desc:'肺鱼用鳍在泥泞中艰难前行，身后是它即将告别了数亿年的海洋。', choices:[
+      { icon:'🦕', text:'给予它们巨大的体型', effects:{pop:3,tech:1,chaos:2}, log:'巨型昆虫和爬行动物统治了石炭纪的沼泽森林。' },
+      { icon:'🧠', text:'赋予它们更强的学习能力', effects:{tech:3,culture:2}, log:'大脑的进化悄然开始，智慧的种子被埋下。' },
+      { icon:'🌡️', text:'让气候温暖湿润，万物繁盛', effects:{pop:4,culture:1}, log:'全球变暖，雨林覆盖大陆，生命迎来了黄金时代。' }
+    ]},
+    { id:'a2', icon:'☄️', title:'小行星撞击！', desc:'一颗直径十公里的小行星撞向星球，尘埃遮蔽了阳光，全球气温骤降。', choices:[
+      { icon:'🦖', text:'任由大规模灭绝发生', effects:{pop:-5,chaos:-3,tech:1}, log:'恐龙灭绝了，但哺乳动物获得了前所未有的生存空间。' },
+      { icon:'🌋', text:'用火山活动抵消寒冷', effects:{chaos:4,pop:-2,tech:2}, log:'超级火山爆发，虽然短期内更糟，但二氧化碳最终让气候回暖。' },
+      { icon:'🕳️', text:'引导幸存者躲入地下', effects:{pop:-2,tech:3,culture:2}, log:'小型哺乳动物钻入洞穴，在地下发展出了复杂的社群行为。' }
+    ]},
+    { id:'a3', icon:'🐒', title:'灵长类动物出现了', desc:'树梢间，一群小动物开始用前肢抓握树枝，它们的好奇心超越了任何前辈。', choices:[
+      { icon:'🌳', text:'提供丰富的果树和安全的树冠', effects:{pop:3,culture:2}, log:'在树上生活的日子里，灵长类发展出了立体视觉和灵活的双手。' },
+      { icon:'🌾', text:'让草原扩张，逼它们下地行走', effects:{tech:3,pop:2,chaos:1}, log:'森林退缩，草原蔓延，一部分猿类开始直立行走。' },
+      { icon:'🧩', text:'给它们设置各种难题', effects:{tech:4,culture:3,chaos:2}, log:'越聪明的个体越容易活下来——自然选择开始偏爱智慧。' }
+    ]}
+  ],
+  civilization: [
+    { id:'c1', icon:'🔥', title:'第一簇篝火被点燃', desc:'一个寒冷的夜晚，某个直立人无意中敲击燧石迸出了火星，照亮了整个人类史。', choices:[
+      { icon:'🏕️', text:'让他们围火而居，发展语言和故事', effects:{culture:4,pop:2}, log:'篝火旁诞生了第一批神话、歌谣和社群纽带。' },
+      { icon:'🔧', text:'用火冶炼金属，制造工具', effects:{tech:4,pop:1}, log:'青铜从火焰中诞生，文明进入了工具时代。' },
+      { icon:'🌍', text:'用火开垦土地，扩张领地', effects:{pop:4,tech:2,chaos:2}, log:'刀耕火种让人类扩散到了前所未有的疆域。' }
+    ]},
+    { id:'c2', icon:'🏛️', title:'第一座城市建立', desc:'幼发拉底河畔，人们用泥砖垒起了世界上第一座城。文字、法律、税收随之而来。', choices:[
+      { icon:'📜', text:'大力发展文字和法律', effects:{culture:5,tech:2}, log:'《汉谟拉比法典》被刻在石柱上，秩序取代了混乱。' },
+      { icon:'⚔️', text:'建立军队，征服周边部落', effects:{pop:3,tech:3,chaos:4}, log:'帝国的车轮开始转动，征服与融合交替上演。' },
+      { icon:'🏗️', text:'建造宏伟的奇观建筑', effects:{culture:4,tech:3,pop:1}, log:'金字塔、空中花园、巨石阵——人类开始挑战天空。' }
+    ]},
+    { id:'c3', icon:'💡', title:'科学革命', desc:'一个苹果落在一个人的头上，他没有捡起来吃，而是问了一句"为什么"。', choices:[
+      { icon:'🔬', text:'全力支持科学探索', effects:{tech:6,culture:2}, log:'望远镜对准星空，显微镜窥探微观，人类开始理解宇宙的法则。' },
+      { icon:'⛪', text:'让科学与信仰对话而非对抗', effects:{culture:5,tech:3,chaos:-1}, log:'在理性与信仰的张力中，一种更包容的世界观逐渐成形。' },
+      { icon:'🏭', text:'将科学转化为工业力量', effects:{tech:5,pop:3,chaos:3}, log:'蒸汽机的轰鸣响彻大陆，烟囱如森林般拔地而起。' }
+    ]}
+  ],
+  modern: [
+    { id:'m1', icon:'🌐', title:'信息时代来临', desc:'一台占满整个房间的计算机开始运转，它算得比一百个人都快——世界从此不同。', choices:[
+      { icon:'💻', text:'让计算机走进每个人的生活', effects:{tech:5,culture:4,pop:2}, log:'互联网把世界连为一体，知识以前所未有的速度流动。' },
+      { icon:'🤖', text:'全力发展人工智能', effects:{tech:7,culture:2,chaos:3}, log:'机器开始学习和思考，一个全新的智慧物种正在诞生。' },
+      { icon:'🔐', text:'用技术加强监控和控制', effects:{tech:4,chaos:-2,culture:-1}, log:'天网系统覆盖了每一条街道，安全与自由的争论从未停止。' }
+    ]},
+    { id:'m2', icon:'🌍', title:'全球危机', desc:'海平面上升、极端气候、资源枯竭——文明第一次面临自己制造的生存危机。', choices:[
+      { icon:'🤝', text:'全球合作，共同应对', effects:{culture:5,tech:3,chaos:-3}, log:'前所未有的全球协议达成，人类第一次团结为一个命运共同体。' },
+      { icon:'🚀', text:'加速太空殖民，寻找新家园', effects:{tech:6,pop:3,chaos:2}, log:'火箭划破天际，第一批殖民者登上了邻近行星。' },
+      { icon:'🏰', text:'各自为政，每个国家自保', effects:{chaos:5,pop:-2,tech:2}, log:'国境关闭，资源争夺战爆发，文明在分裂中挣扎。' }
+    ]},
+    { id:'m3', icon:'✨', title:'奇点临近', desc:'技术发展的曲线近乎垂直，没有人能预测明天会发生什么。文明站在了命运的十字路口。', choices:[
+      { icon:'🌟', text:'拥抱超越，与机器融合进化', effects:{tech:8,culture:4,chaos:2}, log:'人类与AI的界限开始模糊，一种全新的存在形式诞生了。' },
+      { icon:'🧘', text:'回归本真，追求精神升华', effects:{culture:8,tech:2,chaos:-2}, log:'物质被放下，人类转向了内心宇宙的探索。' },
+      { icon:'⚡', text:'孤注一掷，启动终极实验', effects:{tech:10,chaos:8,pop:0}, log:'没有人知道按下的按钮会带来什么——天堂还是深渊？' }
+    ]}
+  ]
+};
+
+// ========== 渲染 ==========
+function updateStats() {
+  const clamp = (v,mx) => Math.max(0,Math.min(100,Math.round(v/mx*100)));
+  document.getElementById('sPop').textContent = Math.max(0,state.pop);
+  document.getElementById('sTech').textContent = state.tech;
+  document.getElementById('sCul').textContent = state.culture;
+  document.getElementById('sChaos').textContent = state.chaos;
+  document.getElementById('bPop').style.width = clamp(state.pop,20)+'%';
+  document.getElementById('bTech').style.width = clamp(state.tech,50)+'%';
+  document.getElementById('bCul').style.width = clamp(state.culture,50)+'%';
+  document.getElementById('bChaos').style.width = clamp(state.chaos,50)+'%';
+}
+
+function updatePlanet() {
+  const p = document.getElementById('planet');
+  const r = Math.min(255, Math.round(80 + state.pop*3 + state.tech*2));
+  const g = Math.min(255, Math.round(60 + state.culture*4));
+  const b = Math.min(255, Math.round(120 + state.tech*3 + state.chaos*2));
+  const chaos = Math.min(1, state.chaos/50);
+  const grad = [];
+  for(let i=0;i<6;i++){
+    const s = 1 - chaos * Math.random()*0.5;
+    const cr = Math.round(r*s), cg = Math.round(g*s), cb = Math.round(b*s);
+    grad.push(`rgb(${cr},${cg},${cb})`);
+  }
+  p.style.background = `radial-gradient(circle at 40% 35%, ${grad[0]}, ${grad[1]} 30%, ${grad[2]} 60%, ${grad[3]} 80%, ${grad[4]})`;
+  if(state.pop<=0) p.style.background = '#1a1a2e';
+}
+
+function updateEra() {
+  const eras = [
+    { max:3, name:'原始星云 · 生命萌芽', color:'#60a5fa' },
+    { max:7, name:'古生代 · 万物竞逐', color:'#10b981' },
+    { max:11, name:'文明曙光 · 智慧觉醒', color:'#f59e0b' },
+    { max:15, name:'现代纪元 · 技术爆炸', color:'#a78bfa' },
+    { max:99, name:'未来 · 超越想象', color:'#f093fb' }
+  ];
+  for(const e of eras){ if(state.turn < e.max){ document.getElementById('era').textContent = e.name; document.getElementById('era').style.color = e.color; break; } }
+}
+
+function addLog(msg) {
+  state.logs.unshift({ time:state.turn, text:msg });
+  if(state.logs.length > 20) state.logs.length = 20;
+  const area = document.getElementById('logArea');
+  area.innerHTML = state.logs.map(l => `<div class="log-item"><span class="l-time">T${l.time}</span>${l.text}</div>`).join('');
+}
+
+function renderEvent(evt) {
+  document.getElementById('eventArea').innerHTML = `
+    <div class="icon">${evt.icon}</div>
+    <div class="title">${evt.title}</div>
+    <div class="desc">${evt.desc}</div>`;
+  document.getElementById('choicesArea').innerHTML = evt.choices.map((c,i) => `
+    <button class="choice-btn" onclick="choose('${evt.id}',${i})">
+      <span class="c-icon">${c.icon}</span>${c.text}
+    </button>`).join('');
+}
+
+function applyEffects(effects) {
+  if(effects.pop) state.pop += effects.pop;
+  if(effects.tech) state.tech += effects.tech;
+  if(effects.culture) state.culture += effects.culture;
+  if(effects.chaos) state.chaos += effects.chaos;
+  state.pop = Math.max(0, state.pop);
+  state.tech = Math.max(0, state.tech);
+  state.culture = Math.max(0, state.culture);
+  state.chaos = Math.max(0, state.chaos);
+}
+
+function checkEnd() {
+  if(state.pop <= 0) return 'extinct';
+  if(state.chaos >= 40) return 'chaos';
+  if(state.tech >= 45 && state.culture >= 35) return 'utopia';
+  if(state.tech >= 50 && state.chaos >= 35) return 'dystopia';
+  if(state.turn >= 15) return 'complete';
+  return null;
+}
+
+function pickEvent() {
+  let pool;
+  if(state.turn < 3) pool = 'primordial';
+  else if(state.turn < 6) pool = 'ancient';
+  else if(state.turn < 10) pool = 'civilization';
+  else pool = 'modern';
+
+  const evts = events[pool];
+  // 避免重复
+  const used = state.logs.map(l=>l.text);
+  const available = evts.filter(e=>!used.some(u=>u.includes(e.title.substring(0,4))));
+  const pick = available.length > 0 ? available : evts;
+  return pick[Math.floor(Math.random()*pick.length)];
+}
+
+function choose(evtId, choiceIdx) {
+  // 找到事件
+  let evt = null;
+  for(const pool of Object.values(events)) {
+    evt = pool.find(e=>e.id===evtId);
+    if(evt) break;
+  }
+  if(!evt) return;
+
+  const choice = evt.choices[choiceIdx];
+  applyEffects(choice.effects);
+  addLog(choice.log);
+  state.turn++;
+  updateStats();
+  updatePlanet();
+  updateEra();
+
+  const end = checkEnd();
+  if(end) { showEnd(end); return; }
+
+  const nextEvt = pickEvent();
+  renderEvent(nextEvt);
+  document.getElementById('gameCard').scrollIntoView({behavior:'smooth'});
+}
+
+function showEnd(type) {
+  document.getElementById('gameCard').style.display = 'none';
+  const ec = document.getElementById('endCard'); ec.classList.add('show');
+
+  const endings = {
+    extinct: {
+      icon:'💀', title:'文明终结', color:'#ef4444',
+      desc:`在第 ${state.turn} 个纪元，这颗星球上的生命之火熄灭了。人口归零，曾经的一切归于沉寂。但也许，在宇宙的另一端，新的氨基酸正在温暖的浅海中悄然合成……`,
+      extra: `灾难次数：${state.disasters} · 黄金时代：${state.goldenAges} · 最高科技：${state.tech}`
+    },
+    chaos: {
+      icon:'🌪️', title:'混沌吞噬', color:'#f59e0b',
+      desc:`混沌值突破临界点，文明在内部撕裂和外部灾难中崩溃。但这并非终点——废墟之下，总有一些东西在等待重生。`,
+      extra: `人口峰值：${state.pop} · 文化残留：${state.culture} · 混沌指数：${state.chaos}`
+    },
+    utopia: {
+      icon:'🌈', title:'理想国', color:'#10b981',
+      desc:`科技与文化达到了完美的平衡。这是一个没有战争、没有饥饿的世界，每个个体都能自由地追求自己的星辰大海。你创造了一个真正的乌托邦。`,
+      extra: `巅峰人口：${state.pop} · 科技等级：${state.tech} · 文化等级：${state.culture}`
+    },
+    dystopia: {
+      icon:'👁️', title:'反乌托邦', color:'#a78bfa',
+      desc:`科技飞速发展，但代价是自由与灵魂。高度监控、算法统治、人性泯灭——这或许是最有效率的文明形态，但它还算是"文明"吗？`,
+      extra: `科技等级：${state.tech} · 混沌指数：${state.chaos} · 幸存人口：${state.pop}`
+    },
+    complete: {
+      icon:'🌌', title:'星际文明', color:'#60a5fa',
+      desc:`15 个纪元过去，你的文明跨越了从原始汤到星际航行的全部历程。无论最终的形态如何，这段旅程本身就已经足够壮丽。`,
+      extra: `最终人口：${state.pop} · 最终科技：${state.tech} · 最终文化：${state.culture} · 混沌度：${state.chaos}`
+    }
+  };
+
+  const e = endings[type];
+  document.getElementById('eIcon').textContent = e.icon;
+  document.getElementById('eTitle').innerHTML = `<span style="color:${e.color}">${e.title}</span>`;
+  document.getElementById('eDesc').textContent = e.desc;
+  document.getElementById('eStats').innerHTML = `
+    <div class="e-stat"><div class="es-val" style="color:#60a5fa">${state.pop}</div><div class="es-lbl">最终人口</div></div>
+    <div class="e-stat"><div class="es-val" style="color:#f59e0b">${state.tech}</div><div class="es-lbl">科技等级</div></div>
+    <div class="e-stat"><div class="es-val" style="color:#10b981">${state.culture}</div><div class="es-lbl">文化等级</div></div>
+    <div class="e-stat"><div class="es-val" style="color:#ef4444">${state.chaos}</div><div class="es-lbl">混沌指数</div></div>
+    <div style="grid-column:1/-1;text-align:center;font-size:0.72rem;color:#5a6a80;margin-top:4px;">${e.extra}</div>
+  `;
+  ec.scrollIntoView({behavior:'smooth'});
+}
+
+// ========== 初始化 ==========
+function init() {
+  // 星空
+  const sc = document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const s = document.createElement('div'); s.className='star';
+    s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*100+'%';
+    const sz=Math.random()*2+0.5; s.style.width=s.style.height=sz+'px';
+    s.style.animationDuration=(Math.random()*3+2)+'s';
+    s.style.animationDelay=(Math.random()*4)+'s';
+    sc.appendChild(s);
+  }
+
+  updateStats();
+  updatePlanet();
+  updateEra();
+  const firstEvt = events.primordial[0];
+  renderEvent(firstEvt);
+}
+
+init();
+</script>
+</body>
+</html>

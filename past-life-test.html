@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>前世测试 - 你的前世是谁？</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+  background:#0a0a0f;
+  color:#e0d5c1;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(120,80,180,0.15) 0%, transparent 60%),
+             radial-gradient(ellipse at 80% 80%, rgba(40,20,80,0.2) 0%, transparent 50%);
+  pointer-events:none;z-index:0;
+}
+.stars{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0}
+
+.container{
+  position:relative;z-index:1;
+  width:100%;max-width:520px;
+  padding:20px;
+}
+.card{
+  background:rgba(20,18,30,0.85);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(180,150,220,0.15);
+  border-radius:20px;
+  padding:32px 24px;
+  box-shadow:0 8px 40px rgba(80,40,140,0.15);
+}
+h1{
+  text-align:center;
+  font-size:28px;
+  font-weight:700;
+  background:linear-gradient(135deg,#c9a8e8,#a78bd4,#8b6bb8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:6px;
+}
+.subtitle{
+  text-align:center;
+  font-size:13px;
+  color:rgba(180,160,200,0.7);
+  margin-bottom:24px;
+  letter-spacing:2px;
+}
+.progress-bar{
+  height:3px;
+  background:rgba(255,255,255,0.08);
+  border-radius:2px;
+  margin-bottom:28px;
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,#8b5cf6,#a78bfa,#c4b5fd);
+  border-radius:2px;
+  transition:width 0.4s ease;
+}
+.question-num{
+  font-size:12px;
+  color:rgba(180,160,200,0.6);
+  text-align:center;
+  margin-bottom:16px;
+  letter-spacing:1px;
+}
+.question-text{
+  font-size:18px;
+  line-height:1.6;
+  text-align:center;
+  margin-bottom:28px;
+  color:#e8e0f0;
+  font-weight:500;
+}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(180,150,220,0.12);
+  border-radius:12px;
+  padding:14px 18px;
+  font-size:15px;
+  color:#c8bdd8;
+  cursor:pointer;
+  transition:all 0.25s;
+  text-align:center;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.option:hover{background:rgba(140,100,220,0.1);border-color:rgba(160,130,220,0.3)}
+.option:active{transform:scale(0.98)}
+.option.selected{
+  background:rgba(139,92,246,0.15);
+  border-color:rgba(139,92,246,0.5);
+  color:#c4b5fd;
+  box-shadow:0 0 20px rgba(139,92,246,0.1);
+}
+.btn-next{
+  display:block;width:100%;
+  margin-top:20px;
+  padding:14px;
+  border:none;border-radius:12px;
+  font-size:16px;font-weight:600;
+  color:#fff;
+  background:linear-gradient(135deg,#7c3aed,#a78bfa);
+  cursor:pointer;
+  transition:all 0.3s;
+  -webkit-tap-highlight-color:transparent;
+  font-family:inherit;
+}
+.btn-next:hover{box-shadow:0 4px 20px rgba(139,92,246,0.3);transform:translateY(-1px)}
+.btn-next:disabled{
+  background:rgba(255,255,255,0.06);
+  color:rgba(255,255,255,0.2);
+  cursor:not-allowed;
+  box-shadow:none;
+  transform:none;
+}
+.btn-next:active:not(:disabled){transform:scale(0.97)}
+
+/* 结果页 */
+.result-icon{
+  font-size:64px;
+  text-align:center;
+  margin-bottom:12px;
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+.result-title{
+  text-align:center;
+  font-size:26px;
+  font-weight:700;
+  background:linear-gradient(135deg,#e9d5ff,#c084fc,#a855f7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:4px;
+}
+.result-era{
+  text-align:center;
+  font-size:13px;
+  color:rgba(180,160,200,0.6);
+  margin-bottom:20px;
+  letter-spacing:1px;
+}
+.result-desc{
+  font-size:15px;
+  line-height:1.8;
+  color:#c0b0d0;
+  text-align:center;
+  margin-bottom:24px;
+  padding:0 8px;
+}
+.result-tags{
+  display:flex;flex-wrap:wrap;gap:8px;
+  justify-content:center;
+  margin-bottom:24px;
+}
+.tag{
+  background:rgba(139,92,246,0.12);
+  border:1px solid rgba(139,92,246,0.2);
+  border-radius:20px;
+  padding:6px 14px;
+  font-size:13px;
+  color:#c4b5fd;
+}
+.btn-restart{
+  display:block;width:100%;
+  padding:14px;
+  border:1px solid rgba(180,150,220,0.2);
+  border-radius:12px;
+  font-size:15px;
+  color:#c8bdd8;
+  background:rgba(255,255,255,0.03);
+  cursor:pointer;
+  transition:all 0.3s;
+  -webkit-tap-highlight-color:transparent;
+  font-family:inherit;
+}
+.btn-restart:hover{
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(180,150,220,0.4);
+}
+.btn-share{
+  display:block;width:100%;
+  padding:14px;
+  margin-bottom:10px;
+  border:none;border-radius:12px;
+  font-size:15px;font-weight:600;
+  color:#fff;
+  background:linear-gradient(135deg,#7c3aed,#a78bfa);
+  cursor:pointer;
+  transition:all 0.3s;
+  -webkit-tap-highlight-color:transparent;
+  font-family:inherit;
+}
+.btn-share:hover{box-shadow:0 4px 20px rgba(139,92,246,0.3)}
+
+.hidden{display:none!important}
+.fade-in{animation:fadeIn 0.5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* 响应式 */
+@media(max-width:400px){
+  .card{padding:24px 16px}
+  h1{font-size:24px}
+  .question-text{font-size:16px}
+  .option{padding:12px 14px;font-size:14px}
+}
+</style>
+</head>
+<body>
+<canvas class="stars" id="stars"></canvas>
+<div class="container">
+  <div class="card" id="card">
+    <!-- 开始页 -->
+    <div id="startPage">
+      <h1>🔮 前世测试</h1>
+      <div class="subtitle">YOUR PAST LIFE REVEALED</div>
+      <p style="text-align:center;font-size:14px;color:rgba(180,160,200,0.7);line-height:1.8;margin-bottom:24px">
+        10个简单的问题<br>揭开你灵魂深处的秘密<br>找到你前世真正的身份
+      </p>
+      <button class="btn-next" id="startBtn" style="margin-top:0">开始探索</button>
+    </div>
+
+    <!-- 题目页 -->
+    <div id="quizPage" class="hidden">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="question-num" id="questionNum"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="options"></div>
+      <button class="btn-next" id="nextBtn" disabled>请先选择答案</button>
+    </div>
+
+    <!-- 结果页 -->
+    <div id="resultPage" class="hidden">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-era" id="resultEra"></div>
+      <div class="result-desc" id="resultDesc"></div>
+      <div class="result-tags" id="resultTags"></div>
+      <button class="btn-share" id="shareBtn">📋 分享结果</button>
+      <button class="btn-restart" id="restartBtn">🔄 再测一次</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // 星空背景
+  var starsCanvas = document.getElementById('stars');
+  var sctx = starsCanvas.getContext('2d');
+  var starList = [];
+  function initStars(){
+    starsCanvas.width = window.innerWidth;
+    starsCanvas.height = window.innerHeight;
+    starList = [];
+    var count = Math.floor((starsCanvas.width * starsCanvas.height) / 3000);
+    for(var i = 0; i < count; i++){
+      starList.push({
+        x: Math.random() * starsCanvas.width,
+        y: Math.random() * starsCanvas.height,
+        r: Math.random() * 1.5 + 0.3,
+        a: Math.random(),
+        s: Math.random() * 0.02 + 0.005
+      });
+    }
+  }
+  function drawStars(){
+    sctx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+    for(var i = 0; i < starList.length; i++){
+      var s = starList[i];
+      s.a += s.s;
+      var alpha = 0.3 + Math.sin(s.a) * 0.3;
+      sctx.beginPath();
+      sctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      sctx.fillStyle = 'rgba(200,180,255,' + alpha + ')';
+      sctx.fill();
+    }
+    requestAnimationFrame(drawStars);
+  }
+  initStars();
+  drawStars();
+  window.addEventListener('resize', function(){
+    initStars();
+  });
+
+  // 题目数据
+  var questions = [
+    {
+      q: '闭上眼睛，你脑海中浮现的第一种颜色是？',
+      options: [
+        {text:'深邃的紫色', val:'mystic'},
+        {text:'流动的蓝色', val:'water'},
+        {text:'温暖的金色', val:'noble'},
+        {text:'寂静的黑色', val:'shadow'}
+      ]
+    },
+    {
+      q: '走在陌生的古镇里，你最想推开哪扇门？',
+      options: [
+        {text:'挂着铜铃的旧木门', val:'mystic'},
+        {text:'雕着花的石拱门', val:'noble'},
+        {text:'爬满藤蔓的铁门', val:'nature'},
+        {text:'虚掩着的破旧门板', val:'shadow'}
+      ]
+    },
+    {
+      q: '如果只能保留一种感官，你会选什么？',
+      options: [
+        {text:'听觉 — 捕捉万物的声音', val:'water'},
+        {text:'嗅觉 — 闻见记忆的味道', val:'nature'},
+        {text:'触觉 — 感受真实的存在', val:'warrior'},
+        {text:'直觉 — 感知看不见的东西', val:'mystic'}
+      ]
+    },
+    {
+      q: '你更被哪种自然元素吸引？',
+      options: [
+        {text:'火 — 热烈、毁灭与重生', val:'warrior'},
+        {text:'水 — 流动、深邃与包容', val:'water'},
+        {text:'风 — 自由、变化与远方', val:'nature'},
+        {text:'土 — 厚重、沉稳与根基', val:'noble'}
+      ]
+    },
+    {
+      q: '如果你在梦里看到一只动物，它最可能是？',
+      options: [
+        {text:'展翅的鹰', val:'warrior'},
+        {text:'静卧的鹿', val:'nature'},
+        {text:'盘踞的蛇', val:'mystic'},
+        {text:'独行的狼', val:'shadow'}
+      ]
+    },
+    {
+      q: '深夜独处时，你最常感受到什么？',
+      options: [
+        {text:'一种说不清的思念', val:'water'},
+        {text:'与某种存在对话的冲动', val:'mystic'},
+        {text:'内心深处的平静', val:'noble'},
+        {text:'对未知的轻微不安', val:'shadow'}
+      ]
+    },
+    {
+      q: '你更喜欢什么样的光线？',
+      options: [
+        {text:'晨曦 — 清冷而充满希望', val:'nature'},
+        {text:'正午 — 强烈而无所遁形', val:'warrior'},
+        {text:'黄昏 — 温暖而略带感伤', val:'water'},
+        {text:'月光 — 静谧而神秘', val:'mystic'}
+      ]
+    },
+    {
+      q: '面对一片废墟，你的第一反应是？',
+      options: [
+        {text:'想象它曾经的模样', val:'water'},
+        {text:'感受到某种历史的重量', val:'noble'},
+        {text:'想要重建它', val:'warrior'},
+        {text:'觉得有种特别的美', val:'shadow'}
+      ]
+    },
+    {
+      q: '什么样的故事最能打动你？',
+      options: [
+        {text:'英雄的陨落与救赎', val:'warrior'},
+        {text:'命运的错过与重逢', val:'water'},
+        {text:'智者的隐退与传承', val:'mystic'},
+        {text:'王国的兴衰与轮回', val:'noble'}
+      ]
+    },
+    {
+      q: '如果前世有一个遗憾，你觉得是什么？',
+      options: [
+        {text:'没能守护住珍视的东西', val:'warrior'},
+        {text:'有些话没有说出口', val:'water'},
+        {text:'太早离开了这个世界', val:'shadow'},
+        {text:'活得太清醒，不够自由', val:'mystic'}
+      ]
+    }
+  ];
+
+  // 结果映射
+  var results = {
+    mystic: {
+      title: '古老祭司',
+      era: '约公元前3000年 · 两河流域',
+      icon: '🔮',
+      desc: '你的前世是一位通晓天象与符文的神秘祭司。你站在神庙的最高处，解读星图，聆听神谕，在人与天之间架起桥梁。你拥有超越时代的知识，却也因此孤独。这一世的直觉与灵性，是你前世留下的印记。',
+      tags: ['神秘学', '星象', '仪式', '预言']
+    },
+    water: {
+      title: '流浪诗人',
+      era: '约公元8世纪 · 盛唐',
+      icon: '🎭',
+      desc: '你的前世是一位云游四方的诗人。你骑着一匹瘦马，走过长安的繁华、江南的烟雨、大漠的孤烟。你把酒问月，用诗句记录人间的悲欢。那些说不清的思念与感伤，是你前世笔下未完成的诗篇。',
+      tags: ['诗歌', '流浪', '浪漫', '酒']
+    },
+    noble: {
+      title: '没落贵族',
+      era: '约公元18世纪 · 欧洲',
+      icon: '👑',
+      desc: '你的前世是一位出身显赫却家道中落的贵族。你拥有高雅的品味与深沉的气质，见过繁华也历经沧桑。你守护着家族最后的尊严，在时代的洪流中保持从容。你骨子里的优雅，是前世刻下的烙印。',
+      tags: ['贵族', '优雅', '沧桑', '尊严']
+    },
+    warrior: {
+      title: '沙场将军',
+      era: '约公元3世纪 · 古罗马',
+      icon: '⚔️',
+      desc: '你的前世是一位征战沙场的将军。你身披铠甲，手握长剑，在千军万马中冲锋陷阵。你守护着身后的城池与人民，哪怕付出生命。这一世你内心的勇敢与决断力，来自前世无数次直面生死的经历。',
+      tags: ['战争', '荣耀', '守护', '勇气']
+    },
+    nature: {
+      title: '山林隐士',
+      era: '约公元5世纪 · 魏晋',
+      icon: '🌿',
+      desc: '你的前世是一位隐居山林的修行者。你远离尘嚣，在竹林深处筑一间草庐，与清风明月为伴。你种药、弹琴、写书，用最简单的方式活出了最深的智慧。这一世你对自然的亲近感，是前世灵魂的选择。',
+      tags: ['自然', '修行', '宁静', '智慧']
+    },
+    shadow: {
+      title: '暗夜旅者',
+      era: '约公元15世纪 · 中世纪',
+      icon: '🌑',
+      desc: '你的前世是一位行走在暗夜中的旅者。你不属于任何地方，总是在路上，在月光下穿行于森林与古城之间。你见过太多秘密，背负着不为人知的过往。这一世你对黑暗的坦然，是你前世最深的修行。',
+      tags: ['孤独', '秘密', '旅途', '暗夜']
+    }
+  };
+
+  // 分数计算
+  var scores = {mystic:0, water:0, noble:0, warrior:0, nature:0, shadow:0};
+  var currentQ = 0;
+  var selectedVal = null;
+
+  var startPage = document.getElementById('startPage');
+  var quizPage = document.getElementById('quizPage');
+  var resultPage = document.getElementById('resultPage');
+  var card = document.getElementById('card');
+
+  function resetScores(){
+    scores = {mystic:0, water:0, noble:0, warrior:0, nature:0, shadow:0};
+    currentQ = 0;
+    selectedVal = null;
+  }
+
+  function showPage(page){
+    startPage.classList.add('hidden');
+    quizPage.classList.add('hidden');
+    resultPage.classList.add('hidden');
+    page.classList.remove('hidden');
+    card.classList.remove('fade-in');
+    void card.offsetWidth;
+    card.classList.add('fade-in');
+  }
+
+  function renderQuestion(){
+    if(currentQ >= questions.length){
+      showResult();
+      return;
+    }
+    var q = questions[currentQ];
+    document.getElementById('questionNum').textContent = '第 ' + (currentQ+1) + ' / ' + questions.length + ' 题';
+    document.getElementById('questionText').textContent = q.q;
+    var progressFill = document.getElementById('progressFill');
+    progressFill.style.width = ((currentQ / questions.length) * 100) + '%';
+
+    var optionsEl = document.getElementById('options');
+    optionsEl.innerHTML = '';
+    selectedVal = null;
+    var nextBtn = document.getElementById('nextBtn');
+    nextBtn.disabled = true;
+    nextBtn.textContent = '请先选择答案';
+
+    for(var i = 0; i < q.options.length; i++){
+      (function(opt){
+        var div = document.createElement('div');
+        div.className = 'option';
+        div.textContent = opt.text;
+        div.addEventListener('click', function(){
+          var allOpts = optionsEl.querySelectorAll('.option');
+          for(var j = 0; j < allOpts.length; j++){
+            allOpts[j].classList.remove('selected');
+          }
+          div.classList.add('selected');
+          selectedVal = opt.val;
+          nextBtn.disabled = false;
+          nextBtn.textContent = currentQ === questions.length - 1 ? '揭晓前世' : '下一题';
+        });
+        optionsEl.appendChild(div);
+      })(q.options[i]);
+    }
+  }
+
+  function showResult(){
+    // 找出最高分
+    var maxKey = 'mystic';
+    var maxScore = 0;
+    var keys = Object.keys(scores);
+    for(var i = 0; i < keys.length; i++){
+      if(scores[keys[i]] > maxScore){
+        maxScore = scores[keys[i]];
+        maxKey = keys[i];
+      }
+    }
+    // 如果有并列，随机选一个
+    var ties = [];
+    for(var j = 0; j < keys.length; j++){
+      if(scores[keys[j]] === maxScore) ties.push(keys[j]);
+    }
+    var finalKey = ties[Math.floor(Math.random() * ties.length)];
+    var result = results[finalKey];
+
+    document.getElementById('resultIcon').textContent = result.icon;
+    document.getElementById('resultTitle').textContent = result.title;
+    document.getElementById('resultEra').textContent = result.era;
+    document.getElementById('resultDesc').textContent = result.desc;
+
+    var tagsEl = document.getElementById('resultTags');
+    tagsEl.innerHTML = '';
+    for(var k = 0; k < result.tags.length; k++){
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = result.tags[k];
+      tagsEl.appendChild(tag);
+    }
+
+    showPage(resultPage);
+  }
+
+  // 事件绑定
+  document.getElementById('startBtn').addEventListener('click', function(){
+    resetScores();
+    showPage(quizPage);
+    renderQuestion();
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    if(selectedVal === null) return;
+    scores[selectedVal]++;
+    currentQ++;
+    renderQuestion();
+  });
+
+  document.getElementById('restartBtn').addEventListener('click', function(){
+    resetScores();
+    showPage(startPage);
+  });
+
+  document.getElementById('shareBtn').addEventListener('click', function(){
+    var title = document.getElementById('resultTitle').textContent;
+    var era = document.getElementById('resultEra').textContent;
+    var icon = document.getElementById('resultIcon').textContent;
+    var text = icon + ' 我的前世是「' + title + '」\n' + era + '\n\n来测测你的前世是谁？';
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(function(){
+        alert('已复制结果到剪贴板！\n\n' + text);
+      }).catch(function(){
+        alert(text);
+      });
+    }else{
+      alert(text);
+    }
+  });
+})();
+</script>
+</body>
+</html>

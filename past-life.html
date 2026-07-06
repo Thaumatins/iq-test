@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>前世回溯 · 灵魂探源</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+  background:#0a0a14;color:#c8c8e0;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  background-image:radial-gradient(ellipse at 50% 30%,rgba(140,120,220,0.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(200,160,100,0.05) 0%,transparent 50%);
+}
+.container{width:100%;max-width:520px;padding:14px}
+
+.header{text-align:center;padding:32px 10px 16px}
+.header .icon{font-size:44px;display:inline-block;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.header h1{font-size:1.5rem;font-weight:800;margin-top:6px;background:linear-gradient(135deg,#c4a46c,#e8d5a3,#a08050);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px}
+.header p{font-size:0.75rem;color:#5a5070;margin-top:4px}
+
+.card{background:rgba(16,14,28,0.9);border:1px solid rgba(160,140,200,0.15);border-radius:18px;padding:22px 18px;margin-bottom:10px;backdrop-filter:blur(12px)}
+
+.progress{display:flex;align-items:center;gap:8px;margin-bottom:18px}
+.progress-bar{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.progress-bar div{height:100%;border-radius:2px;background:linear-gradient(90deg,#c4a46c,#e8d5a3);transition:width 0.4s}
+.progress-num{font-size:0.7rem;color:#5a5070;min-width:38px;text-align:right}
+
+.q-wrap{display:none}
+.q-wrap.active{display:block;animation:up 0.35s ease}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.q-text{font-size:1rem;font-weight:600;color:#e0d8f0;margin-bottom:18px;line-height:1.7}
+
+.options{display:flex;flex-direction:column;gap:7px}
+.opt-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(160,140,200,0.1);border-radius:12px;color:#a098c0;font-size:0.86rem;cursor:pointer;transition:all 0.25s;text-align:left;font-family:inherit}
+.opt-btn:hover{background:rgba(180,150,100,0.08);border-color:rgba(200,170,120,0.3);color:#d0c8e0}
+.opt-btn.selected{background:rgba(200,170,120,0.12);border-color:#c4a46c;color:#e8d5a3}
+.opt-emoji{font-size:1.2rem;flex-shrink:0}
+
+.btn-row{display:flex;gap:8px;margin-top:18px;justify-content:center}
+.btn{padding:9px 24px;border-radius:20px;font-size:0.84rem;font-weight:600;cursor:pointer;border:none;transition:all 0.3s;font-family:inherit}
+.btn-back{background:transparent;border:1px solid rgba(160,140,200,0.15);color:#5a5070}
+.btn-back:hover{border-color:#c4a46c;color:#c4a46c}
+.btn-go{background:linear-gradient(135deg,#8a6a30,#c4a46c);color:#1a1410}
+.btn-go:hover{opacity:0.85}
+.btn-go:disabled{opacity:0.25;cursor:not-allowed}
+.btn-finish{background:linear-gradient(135deg,#6a4090,#a080d0);color:#f0e8ff;font-size:0.9rem;padding:10px 32px}
+.btn-finish:hover{opacity:0.85}
+.btn-finish:disabled{opacity:0.25;cursor:not-allowed}
+
+/* 结果 */
+.result{display:none}
+.result.show{display:block;animation:up 0.6s ease}
+.r-top{text-align:center;padding:14px 0}
+.r-emoji{font-size:68px;display:block;animation:popIn 0.7s ease}
+@keyframes popIn{0%{transform:scale(0)rotate(-20deg);opacity:0}60%{transform:scale(1.1)rotate(3deg)}100%{transform:scale(1)rotate(0);opacity:1}}
+.r-title{font-size:1.4rem;font-weight:800;margin-top:6px}
+.r-sub{font-size:0.8rem;color:#5a5070;margin-top:3px}
+
+.r-section{margin:14px 0}
+.r-section h3{font-size:0.8rem;color:#c4a46c;letter-spacing:2px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(160,140,200,0.08)}
+.r-box{background:rgba(200,170,120,0.04);border:1px solid rgba(200,170,120,0.08);border-radius:12px;padding:14px}
+.r-box p,.r-box li{font-size:0.82rem;color:#9080a0;line-height:1.7}
+.r-box ul{list-style:none;padding:0}
+.r-box li{padding:3px 0 3px 14px;position:relative}
+.r-box li::before{content:'✦';position:absolute;left:0;color:#c4a46c;font-size:0.5rem;top:6px}
+
+.r-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.r-tag{padding:4px 12px;border-radius:12px;font-size:0.7rem;background:rgba(200,170,120,0.1);border:1px solid rgba(200,170,120,0.2);color:#c4a46c}
+
+.btn-again{display:block;margin:14px auto 0;background:transparent;border:1px solid rgba(160,140,200,0.15);color:#5a5070;padding:8px 22px;border-radius:18px;font-size:0.8rem;cursor:pointer;font-family:inherit}
+.btn-again:hover{border-color:#c4a46c;color:#c4a46c}
+
+.foot{text-align:center;padding:10px;font-size:0.62rem;color:#2a2030}
+</style>
+</head>
+<body>
+
+<div class="container">
+<div class="header">
+  <div class="icon">🔮</div>
+  <h1>前世回溯</h1>
+  <p>十道题 · 探源你的灵魂印记</p>
+</div>
+
+<div class="card" id="qCard">
+  <div class="progress">
+    <div class="progress-bar"><div id="qBar"></div></div>
+    <div class="progress-num" id="qNum">1/10</div>
+  </div>
+  <div id="qContainer"></div>
+  <div class="btn-row" id="btnRow"></div>
+</div>
+
+<div class="card result" id="rCard">
+  <div class="r-top">
+    <span class="r-emoji" id="rEmoji"></span>
+    <div class="r-title" id="rTitle"></div>
+    <div class="r-sub" id="rSub"></div>
+  </div>
+  <div class="r-tags" id="rTags"></div>
+  <div class="r-section">
+    <h3>📜 前世身份</h3>
+    <div class="r-box" id="rIdentity"></div>
+  </div>
+  <div class="r-section">
+    <h3>🌍 时代背景</h3>
+    <div class="r-box" id="rEra"></div>
+  </div>
+  <div class="r-section">
+    <h3>💫 灵魂特质</h3>
+    <div class="r-box" id="rTraits"></div>
+  </div>
+  <div class="r-section">
+    <h3>🔮 今生启示</h3>
+    <div class="r-box" id="rAdvice"></div>
+  </div>
+  <button class="btn-again" onclick="restart()">⟳ 再次回溯</button>
+</div>
+<div class="foot">※ 仅供娱乐 · 信则有不信则无</div>
+</div>
+
+<script>
+var Q=[
+  {text:'闭上眼睛，脑海中浮现的第一个颜色是？',opts:[
+    {v:'noble',e:'🟡',t:'金色——温暖而耀眼'},
+    {v:'mystic',e:'🟣',t:'紫色——深邃而神秘'},
+    {v:'nature',e:'🟢',t:'绿色——宁静而生机'},
+    {v:'warrior',e:'🔴',t:'红色——热烈而张扬'}
+  ]},
+  {text:'你觉得自己对哪种环境最有"归属感"？',opts:[
+    {v:'noble',e:'🏰',t:'古老的宫殿或城堡'},
+    {v:'nature',e:'🌲',t:'深山老林或草原'},
+    {v:'scholar',e:'📚',t:'满是书籍的书房'},
+    {v:'mystic',e:'🌙',t:'月光下的湖边'}
+  ]},
+  {text:'如果可以穿越回古代，你最想带什么现代物品？',opts:[
+    {v:'scholar',e:'📖',t:'一本百科全书'},
+    {v:'warrior',e:'⚔️',t:'一把精良的武器'},
+    {v:'artist',e:'🎨',t:'一套绘画工具'},
+    {v:'healer',e:'💊',t:'急救药品和医书'}
+  ]},
+  {text:'在人群中，你通常扮演什么角色？',opts:[
+    {v:'noble',e:'👑',t:'被大家依赖的决策者'},
+    {v:'artist',e:'🎭',t:'带来欢乐和灵感的氛围制造者'},
+    {v:'scholar',e:'🦉',t:'安静观察、偶尔一针见血的智者'},
+    {v:'healer',e:'🤲',t:'大家有心事时第一个找的倾诉对象'}
+  ]},
+  {text:'以下哪种"气味"最能唤起你的情绪？',opts:[
+    {v:'nature',e:'🌿',t:'雨后泥土和青草的味道'},
+    {v:'mystic',e:'🪔',t:'檀香和古老庙宇的焚香'},
+    {v:'noble',e:'🌹',t:'玫瑰与旧木家具混合的气息'},
+    {v:'warrior',e:'🔥',t:'篝火和铁锈的金属味'}
+  ]},
+  {text:'你做过最频繁的梦境类型是？',opts:[
+    {v:'mystic',e:'🌌',t:'在星空或宇宙中飘浮'},
+    {v:'warrior',e:'⚡',t:'在战斗或奔跑中醒来'},
+    {v:'artist',e:'🎪',t:'色彩斑斓、场景不断变换'},
+    {v:'nature',e:'🦅',t:'在自然中与动物对话'}
+  ]},
+  {text:'面对一个重大选择，你更信任什么？',opts:[
+    {v:'scholar',e:'🧠',t:'理性分析——把所有利弊列出来'},
+    {v:'mystic',e:'🌙',t:'直觉——冥冥之中有声音指引'},
+    {v:'warrior',e:'💪',t:'行动——先做再说，错了再改'},
+    {v:'healer',e:'💗',t:'感受——这件事让我内心安宁吗'}
+  ]},
+  {text:'哪种"声音"最能让你平静？',opts:[
+    {v:'nature',e:'🌊',t:'海浪拍岸或溪水潺潺'},
+    {v:'mystic',e:'🔔',t:'寺庙钟声或风铃叮当'},
+    {v:'scholar',e:'📜',t:'翻书声和毛笔划过宣纸'},
+    {v:'artist',e:'🎵',t:'悠扬的古琴或笛声'}
+  ]},
+  {text:'你觉得"命运"是什么？',opts:[
+    {v:'noble',e:'♟️',t:'一盘棋——需要智慧和策略'},
+    {v:'mystic',e:'🌊',t:'一条河——顺势而行，不必强求'},
+    {v:'warrior',e:'⚡',t:'一场战斗——靠自己打出来'},
+    {v:'artist',e:'🎨',t:'一张画布——由自己来涂抹'}
+  ]},
+  {text:'如果前世有未了的心愿，你觉得是什么？',opts:[
+    {v:'healer',e:'🕊️',t:'没能拯救某个重要的人'},
+    {v:'scholar',e:'🔍',t:'有一个谜题没来得及解开'},
+    {v:'noble',e:'🏛️',t:'没能守护好自己的家园'},
+    {v:'artist',e:'🎶',t:'有一首曲子没来得及写完'}
+  ]}
+];
+
+var cur=0,ans={},sel=null;
+
+var personas={
+  noble:{name:'王朝贵族',emoji:'👑',color:'#e8c560',tags:['威严','责任感','领袖气质'],identity:'你前世出身显赫，可能是皇室成员或一方领主。你习惯了被人仰望，也背负着沉重的责任。你的决策影响着成千上万人的命运。',era:'大约在唐宋至明清时期的中原大地。你可能经历过宫廷的繁华与险恶，见过盛世也见过乱世。',traits:'天生具有领导力和大局观。你习惯于为他人着想，有时会压抑自己的需求。你对"秩序"和"传承"有着本能的执着。',advice:['今生不必再背负那么多——学会放手也是一种智慧','你适合需要统筹规划的工作，但也要记得照顾自己','前世未尽的守护之责，今生可以以更轻盈的方式完成']},
+  mystic:{name:'灵修隐者',emoji:'🌙',color:'#a78bfa',tags:['直觉力','神秘感','灵性'],identity:'你前世是一位修行者、占星师或萨满。你在深山古刹或草原毡帐中度过了一生，与天地星辰对话，掌握着常人无法理解的智慧。',era:'可能跨越了多个时代——从远古的巫觋时代到中世纪的修道院，你的灵魂一直与神秘学相伴。',traits:'直觉极强，常常能"预感到"将要发生的事。你对能量和氛围异常敏感，独自一人时反而最有力量。',advice:['相信你的直觉——它比你以为的更准确','今生可以探索冥想、塔罗或占星，那是你熟悉的路','人群会让你疲惫，给自己留足够的独处空间']},
+  nature:{name:'自然之子',emoji:'🌿',color:'#4ade80',tags:['自由','野性','生命力'],identity:'你前世与大自然融为一体。可能是游牧民族的牧人、深山中的猎户，或是一个与世无争的隐士。你不需要太多言语，风、树和动物就是你的朋友。',era:'可能生活在广袤的蒙古草原、北欧森林或南美雨林。你的时代远离文明中心，却最接近生命的本质。',traits:'你有着超乎常人的生命力和适应力。你不喜欢被规则束缚，城市生活让你隐隐感到窒息。你对动物和植物有着天然的亲和力。',advice:['定期回到自然中去——那是你的充电方式','今生的你或许在钢筋水泥中，但别忘了体内流淌着旷野的血','自由比成功更重要，不要为了世俗标准牺牲你的天性']},
+  warrior:{name:'铁血战士',emoji:'⚔️',color:'#f87171',tags:['勇敢','坚韧','行动力'],identity:'你前世是一名战士、将领或侠客。你在战场上度过了大部分人生，用血肉之躯捍卫信念。你可能战死沙场，但从未后悔。',era:'可能是三国乱世、战国烽火，或是欧洲中世纪的骑士时代。你的名字或许被载入史册，或许默默无闻，但你的勇气刻在了灵魂里。',traits:'行动力极强，面对危险时反而冷静。你有强烈的正义感和保护欲。你不怕吃苦，甚至享受挑战带来的快感。',advice:['今生的战场可能是职场或人生——你依然可以冲锋陷阵','学会示弱不是懦弱，偶尔放下盔甲才能被爱','运动或竞技类活动会让你找到前世的热血感']},
+  scholar:{name:'博学智者',emoji:'📜',color:'#60a5fa',tags:['智慧','求知','洞察'],identity:'你前世是一位学者、谋士或藏书家。你的一生在书卷和思考中度过，追求真理胜过追求权力。你可能在幕后影响了历史的走向。',era:'可能是春秋战国的百家争鸣、宋代的理学盛世，或是文艺复兴时期的欧洲。你身处思想碰撞最激烈的时代。',traits:'你对知识有着天然的饥渴，喜欢探究事物的本质。你说话不多，但一开口往往切中要害。你对愚蠢和肤浅有着本能的排斥。',advice:['今生的你依然适合深耕一个领域——你会成为专家','试着把知识分享出去，教学相长','不要因为看得太透而失去对生活的热情——难得糊涂也是一种智慧']},
+  artist:{name:'流浪艺人',emoji:'🎭',color:'#f59e0b',tags:['创造力','敏感','自由灵魂'],identity:'你前世是一位吟游诗人、画师或戏子。你走遍天涯，用歌声、画笔或表演换取食宿。你没有固定的家，但整个世界都是你的舞台。',era:'可能是盛唐的诗酒年华、文艺复兴的佛罗伦萨，或是巴黎的黄金时代。你生活在艺术最灿烂的时期。',traits:'你拥有极高的审美和创造力，对美有着近乎偏执的追求。你的情绪丰富而敏感，这既是天赋也是负担。你讨厌一成不变的生活。',advice:['不要压抑你的创造力——那是你灵魂的语言','今生的你可以尝试多种艺术形式，找到最能表达自己的那一种','敏感是礼物，但要学会在敏感和坚韧之间找到平衡']},
+  healer:{name:'济世医者',emoji:'🌿',color:'#34d399',tags:['慈悲','治愈','奉献'],identity:'你前世是一位医者、草药师或慈善家。你的一生都在减轻他人的痛苦，可能悬壶济世于乡野，也可能在战地医院救死扶伤。',era:'可能是东汉末年的疫病横行时、中世纪的黑死病时期，或任何需要医者的乱世。你总是出现在最需要你的地方。',traits:'你有着极强的共情能力，能感受到他人的痛苦如同自己的。你天生有一种让人安心的气场。你不求回报，付出本身就是你的快乐。',advice:['今生的你适合从事助人行业——那是你灵魂的使命','但要学会设立边界，过度付出会耗尽你自己','你前世拯救了很多人，今生请允许别人也来照顾你']}
+};
+
+function render(){
+  var q=Q[cur];sel=ans[q.text]!==undefined?ans[q.text]:null;
+  document.getElementById('qContainer').innerHTML='<div class="q-wrap active"><div class="q-text">'+q.text+'</div><div class="options">'+q.opts.map(function(o,i){return'<button class="opt-btn'+(sel===i?' selected':'')+'" onclick="pick('+i+')"><span class="opt-emoji">'+o.e+'</span>'+o.t+'</button>'}).join('')+'</div></div>';
+  document.getElementById('qBar').style.width=((cur+1)/Q.length*100)+'%';
+  document.getElementById('qNum').textContent=(cur+1)+'/'+Q.length;
+  var last=cur===Q.length-1;
+  document.getElementById('btnRow').innerHTML=(cur>0?'<button class="btn btn-back" onclick="prev()">← 上一题</button>':'')+(last?'<button class="btn btn-finish" id="nb" onclick="done()" '+(sel===null?'disabled':'')+'>✦ 回溯前世 ✦</button>':'<button class="btn btn-go" id="nb" onclick="next()" '+(sel===null?'disabled':'')+'>下一题 →</button>');
+}
+function pick(i){sel=i;ans[Q[cur].text]=i;var btns=document.querySelectorAll('.opt-btn');for(var j=0;j<btns.length;j++)btns[j].classList.toggle('selected',j===i);document.getElementById('nb').disabled=false}
+function next(){if(sel===null)return;cur++;render();document.getElementById('qCard').scrollIntoView({behavior:'smooth'})}
+function prev(){cur--;render();document.getElementById('qCard').scrollIntoView({behavior:'smooth'})}
+
+function done(){
+  if(sel===null)return;ans[Q[cur].text]=sel;
+  var scores={};for(var i=0;i<Q.length;i++){var q=Q[i];var v=q.opts[ans[q.text]].v;scores[v]=(scores[v]||0)+1}
+  var sorted=[];for(var k in scores)sorted.push([k,scores[k]]);sorted.sort(function(a,b){return b[1]-a[1]});
+  var primary=sorted[0][0];var p=personas[primary];
+
+  document.getElementById('qCard').style.display='none';
+  var r=document.getElementById('rCard');r.classList.add('show');
+  document.getElementById('rEmoji').textContent=p.emoji;
+  document.getElementById('rTitle').innerHTML='<span style="color:'+p.color+'">'+p.name+'</span>';
+  document.getElementById('rSub').textContent='你的灵魂印记指向——'+p.name;
+  document.getElementById('rTags').innerHTML=p.tags.map(function(t){return'<span class="r-tag">'+t+'</span>'}).join('');
+  document.getElementById('rIdentity').innerHTML='<p>'+p.identity+'</p>';
+  document.getElementById('rEra').innerHTML='<p>'+p.era+'</p>';
+  document.getElementById('rTraits').innerHTML='<p>'+p.traits+'</p>';
+  document.getElementById('rAdvice').innerHTML='<ul>'+p.advice.map(function(a){return'<li>'+a+'</li>'}).join('')+'</ul>';
+  r.scrollIntoView({behavior:'smooth'})
+}
+
+function restart(){cur=0;ans={};sel=null;document.getElementById('qCard').style.display='';document.getElementById('rCard').classList.remove('show');render();document.getElementById('qCard').scrollIntoView({behavior:'smooth'})}
+
+render();
+</script>
+</body>
+</html>

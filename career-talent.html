@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>天赋职业罗盘 · 科学版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'PingFang SC','Microsoft YaHei',sans-serif;
+  background:#f5f3f0;
+  color:#2d2a26;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:20px;
+}
+.container{width:100%;max-width:540px}
+
+/* 头部 */
+.header{text-align:center;padding:24px 0 16px}
+.header .icon{font-size:40px;display:inline-block;animation:spin 8s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.header h1{font-size:1.6rem;font-weight:700;color:#1a1816;letter-spacing:2px}
+.header p{font-size:0.78rem;color:#8a8078;margin-top:4px}
+
+/* 卡片 */
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:24px 20px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.06);
+  margin-bottom:12px;
+}
+
+/* 开始页 */
+.start-desc{
+  text-align:center;
+  font-size:0.88rem;
+  color:#5a5248;
+  line-height:1.8;
+  margin:8px 0 20px;
+}
+.talent-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:16px 0;
+}
+.talent-item{
+  text-align:center;
+  padding:10px 4px;
+  background:#f8f6f2;
+  border-radius:10px;
+  font-size:0.72rem;
+  color:#6a6058;
+}
+.talent-item .e{font-size:22px;display:block;margin-bottom:2px}
+
+/* 进度 */
+.progress{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.progress-bar{flex:1;height:5px;background:#e8e4e0;border-radius:3px;overflow:hidden}
+.progress-bar div{height:100%;border-radius:3px;background:linear-gradient(90deg,#c4956a,#d4a87a);transition:width 0.4s}
+.progress-num{font-size:0.72rem;color:#9a9088;min-width:40px;text-align:right}
+
+/* 题目 */
+.q-wrap{display:none}
+.q-wrap.active{display:block;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.q-text{font-size:1.05rem;font-weight:600;color:#1a1816;margin-bottom:18px;line-height:1.7}
+.q-hint{font-size:0.75rem;color:#9a9088;margin-bottom:14px;padding:8px 12px;background:#f8f6f2;border-radius:8px}
+
+/* 选项 */
+.options{display:flex;flex-direction:column;gap:8px}
+.opt-btn{
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:14px 16px;
+  background:#faf8f5;border:1.5px solid #e8e4e0;
+  border-radius:12px;color:#5a5248;
+  font-size:0.88rem;cursor:pointer;
+  transition:all 0.2s;text-align:left;
+  font-family:inherit;line-height:1.5;
+}
+.opt-btn:hover{background:#f0ece6;border-color:#c4956a}
+.opt-btn.selected{background:#fdf6ed;border-color:#c4956a;color:#8a5a2a;box-shadow:0 0 0 3px rgba(196,149,106,0.1)}
+.opt-letter{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:#e8e4e0;
+  color:#8a8078;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;font-weight:700;flex-shrink:0;
+  transition:all 0.2s;
+}
+.opt-btn.selected .opt-letter{background:#c4956a;color:#fff}
+
+/* 按钮 */
+.btn-row{display:flex;gap:8px;margin-top:20px;justify-content:center}
+.btn{padding:11px 28px;border-radius:24px;font-size:0.86rem;font-weight:600;cursor:pointer;border:none;transition:all 0.25s;font-family:inherit}
+.btn-back{background:transparent;border:1.5px solid #d8d4d0;color:#9a9088}
+.btn-back:hover{border-color:#c4956a;color:#c4956a}
+.btn-go{background:linear-gradient(135deg,#b07850,#c4956a);color:#fff}
+.btn-go:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-go:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+.btn-finish{background:linear-gradient(135deg,#5a7a5a,#7a9a7a);color:#fff;font-size:0.9rem;padding:12px 32px}
+.btn-finish:hover{opacity:0.9}
+.btn-finish:disabled{opacity:0.3;cursor:not-allowed}
+
+/* 结果页 */
+.result{display:none}
+.result.show{display:block;animation:slideUp 0.5s ease}
+.r-header{text-align:center;padding:8px 0 16px}
+.r-emoji{font-size:56px;display:block;margin-bottom:8px}
+.r-title{font-size:1.4rem;font-weight:700;color:#1a1816}
+.r-sub{font-size:0.8rem;color:#8a8078;margin-top:4px}
+
+/* 雷达图 */
+.radar-wrap{text-align:center;margin:16px 0}
+.radar-wrap canvas{max-width:100%}
+
+/* 维度条 */
+.dim-list{margin:16px 0}
+.dim-item{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dim-name{width:60px;font-size:0.78rem;color:#6a6058;text-align:right;flex-shrink:0}
+.dim-bar{flex:1;height:10px;background:#e8e4e0;border-radius:5px;overflow:hidden}
+.dim-bar div{height:100%;border-radius:5px;transition:width 0.8s ease}
+.dim-score{width:32px;font-size:0.78rem;color:#8a5a2a;font-weight:700;text-align:left}
+
+/* 结果卡片 */
+.r-card{background:#faf8f5;border:1.5px solid #e8e4e0;border-radius:12px;padding:16px;margin:12px 0}
+.r-card h3{font-size:0.82rem;color:#8a5a2a;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.r-card p,.r-card li{font-size:0.84rem;color:#5a5248;line-height:1.8}
+.r-card ul{list-style:none;padding:0}
+.r-card li{padding:3px 0 3px 16px;position:relative}
+.r-card li::before{content:'•';position:absolute;left:0;color:#c4956a}
+
+/* 职业标签 */
+.job-tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.job-tag{padding:5px 12px;border-radius:16px;font-size:0.74rem;background:#fdf6ed;border:1.5px solid #e8d8c8;color:#8a5a2a;font-weight:500}
+
+.btn-again{display:block;margin:16px auto 0;background:transparent;border:1.5px solid #d8d4d0;color:#9a9088;padding:10px 24px;border-radius:20px;font-size:0.82rem;cursor:pointer;font-family:inherit}
+.btn-again:hover{border-color:#c4956a;color:#c4956a}
+
+.foot{text-align:center;padding:12px;font-size:0.62rem;color:#b8b0a8}
+
+@media(max-width:400px){
+  .card{padding:18px 14px}
+  .talent-grid{grid-template-columns:repeat(3,1fr);gap:6px}
+  .talent-item{font-size:0.65rem;padding:8px 2px}
+  .talent-item .e{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<div class="header">
+  <div class="icon">🧭</div>
+  <h1>天赋职业罗盘</h1>
+  <p>基于多元智能理论 · 科学版</p>
+</div>
+
+<div class="card" id="qCard">
+  <!-- 开始页 -->
+  <div id="startPage">
+    <div class="start-desc">
+      约15道题，5分钟完成<br>
+      基于霍华德·加德纳多元智能理论<br>
+      发现你最适合的职业方向
+    </div>
+    <div class="talent-grid">
+      <div class="talent-item"><span class="e">🧮</span>数理</div>
+      <div class="talent-item"><span class="e">🧩</span>逻辑</div>
+      <div class="talent-item"><span class="e">🎨</span>空间</div>
+      <div class="talent-item"><span class="e">🗣️</span>语言</div>
+      <div class="talent-item"><span class="e">🎵</span>音乐</div>
+      <div class="talent-item"><span class="e">🤝</span>人际</div>
+      <div class="talent-item"><span class="e">🧘</span>内省</div>
+      <div class="talent-item"><span class="e">🌿</span>自然</div>
+      <div class="talent-item"><span class="e">🏃</span>动觉</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-go" id="startBtn" style="width:100%;margin-top:8px">开始测试</button>
+    </div>
+  </div>
+
+  <!-- 题目页 -->
+  <div id="quizPage" style="display:none">
+    <div class="progress">
+      <div class="progress-bar"><div id="qBar"></div></div>
+      <div class="progress-num" id="qNum">1/15</div>
+    </div>
+    <div id="qContainer"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- 结果页 -->
+  <div class="result" id="rCard">
+    <div class="r-header">
+      <span class="r-emoji" id="rEmoji"></span>
+      <div class="r-title" id="rTitle"></div>
+      <div class="r-sub" id="rSub"></div>
+    </div>
+
+    <div class="radar-wrap">
+      <canvas id="radar" width="400" height="320"></canvas>
+    </div>
+
+    <div class="dim-list" id="dimList"></div>
+
+    <div class="r-card">
+      <h3>🎯 核心天赋</h3>
+      <p id="rTalent"></p>
+    </div>
+
+    <div class="r-card">
+      <h3>💼 推荐职业方向</h3>
+      <div class="job-tags" id="rJobs"></div>
+      <p id="rJobsDesc"></p>
+    </div>
+
+    <div class="r-card">
+      <h3>📊 能力画像</h3>
+      <ul id="rProfile"></ul>
+    </div>
+
+    <div class="r-card">
+      <h3>🚀 发展建议</h3>
+      <ul id="rAdvice"></ul>
+    </div>
+
+    <button class="btn-again" onclick="restart()">⟳ 重新测试</button>
+  </div>
+</div>
+
+<div class="foot">基于霍华德·加德纳多元智能理论 · 仅供参考</div>
+</div>
+
+<script>
+// 题目数据：每题4个选项，分别对应不同天赋维度
+var Q=[
+  {
+    text:'面对一个复杂问题，你的第一反应是？',
+    hint:'请回想你最近遇到的一个难题',
+    opts:[
+      {t:'拆解成步骤，用流程图梳理关系',dim:'logic'},
+      {t:'画个草图或思维导图，看整体结构',dim:'spatial'},
+      {t:'找有经验的人聊聊，听听不同视角',dim:'interpersonal'},
+      {t:'先静下来，感受内心真正想怎么解决',dim:'intrapersonal'}
+    ]
+  },
+  {
+    text:'以下活动中，你最享受的是？',
+    hint:'不是擅长，而是真正乐在其中',
+    opts:[
+      {t:'解一道数学/编程题，找到最优解',dim:'logical-mathematical'},
+      {t:'写一篇文章或故事，表达想法',dim:'linguistic'},
+      {t:'组装家具或做手工，动手创造实物',dim:'bodily-kinesthetic'},
+      {t:'在公园散步观察植物昆虫，记录发现',dim:'naturalistic'}
+    ]
+  },
+  {
+    text:'学习新技能时，你最有效的方式是？',
+    hint:'回忆你最近一次学会新东西的经历',
+    opts:[
+      {t:'看公式/原理，理解底层逻辑',dim:'logical-mathematical'},
+      {t:'看视频演示，跟着做一遍',dim:'bodily-kinesthetic'},
+      {t:'听人讲解，边听边提问',dim:'linguistic'},
+      {t:'自己摸索试错，总结经验',dim:'intrapersonal'}
+    ]
+  },
+  {
+    text:'在团队中，你通常？',
+    hint:'不是理想状态，而是实际表现',
+    opts:[
+      {t:'负责数据分析或方案设计',dim:'logical-mathematical'},
+      {t:'协调沟通，让每个人发挥所长',dim:'interpersonal'},
+      {t:'提出创意，做视觉呈现',dim:'spatial'},
+      {t:'把控节奏，确保按时交付',dim:'intrapersonal'}
+    ]
+  },
+  {
+    text:'以下哪种情况让你最有成就感？',
+    hint:'成就感 = 做完后特别满足',
+    opts:[
+      {t:'用数据证明了一个假设',dim:'logical-mathematical'},
+      {t:'说服了别人接受你的观点',dim:'linguistic'},
+      {t:'完成了一项体能挑战',dim:'bodily-kinesthetic'},
+      {t:'帮助朋友解决了情绪困扰',dim:'interpersonal'}
+    ]
+  },
+  {
+    text:'你更擅长记住什么？',
+    hint:'哪种信息你记得最牢、最久',
+    opts:[
+      {t:'数字、公式、规律',dim:'logical-mathematical'},
+      {t:'人脸、表情、对话内容',dim:'interpersonal'},
+      {t:'旋律、节奏、音色',dim:'musical'},
+      {t:'地图、空间位置、路线',dim:'spatial'}
+    ]
+  },
+  {
+    text:'空闲时间，你更倾向于？',
+    hint:'不是应该做什么，而是真的会做什么',
+    opts:[
+      {t:'读科普书或看纪录片',dim:'logical-mathematical'},
+      {t:'画画、拍照或做设计',dim:'spatial'},
+      {t:'运动、跳舞或做手工',dim:'bodily-kinesthetic'},
+      {t:'写日记、冥想或独处思考',dim:'intrapersonal'}
+    ]
+  },
+  {
+    text:'描述事物时，你习惯用？',
+    hint:'日常说话的方式',
+    opts:[
+      {t:'比喻和故事，让人有画面感',dim:'linguistic'},
+      {t:'数据和对比，精确量化',dim:'logical-mathematical'},
+      {t:'手势和动作，边讲边演示',dim:'bodily-kinesthetic'},
+      {t:'情感词汇，表达内心感受',dim:'intrapersonal'}
+    ]
+  },
+  {
+    text:'以下哪种能力你最想提升？',
+    hint:'如果只能选一个',
+    opts:[
+      {t:'公开演讲和表达能力',dim:'linguistic'},
+      {t:'音乐演奏或创作能力',dim:'musical'},
+      {t:'运动表现和身体协调',dim:'bodily-kinesthetic'},
+      {t:'自然观察和分类能力',dim:'naturalistic'}
+    ]
+  },
+  {
+    text:'做决策时，你最依赖？',
+    hint:'不是应该依赖什么，而是实际',
+    opts:[
+      {t:'利弊清单和概率分析',dim:'logical-mathematical'},
+      {t:'直觉和内心感受',dim:'intrapersonal'},
+      {t:'信任的人的建议',dim:'interpersonal'},
+      {t:'类似案例的经验参考',dim:'linguistic'}
+    ]
+  },
+  {
+    text:'你更容易注意到环境中的？',
+    hint:'走进一个陌生房间，你最先注意到什么',
+    opts:[
+      {t:'整体布局和空间感',dim:'spatial'},
+      {t:'背景音乐的旋律',dim:'musical'},
+      {t:'空气中的气味和温度',dim:'naturalistic'},
+      {t:'房间里人的情绪和氛围',dim:'interpersonal'}
+    ]
+  },
+  {
+    text:'回忆童年，你最喜欢玩的游戏是？',
+    hint:'最让你投入、忘记时间的',
+    opts:[
+      {t:'乐高、拼图或棋类游戏',dim:'spatial'},
+      {t:'唱歌、跳舞或乐器',dim:'musical'},
+      {t:'户外运动或球类游戏',dim:'bodily-kinesthetic'},
+      {t:'和小伙伴过家家、讲故事',dim:'interpersonal'}
+    ]
+  },
+  {
+    text:'面对压力，你的应对方式是？',
+    hint:'压力下的本能反应',
+    opts:[
+      {t:'列出问题清单，逐一解决',dim:'logical-mathematical'},
+      {t:'运动出汗，释放能量',dim:'bodily-kinesthetic'},
+      {t:'找朋友倾诉，寻求支持',dim:'interpersonal'},
+      {t:'独处反思，整理思绪',dim:'intrapersonal'}
+    ]
+  },
+  {
+    text:'以下哪种描述最符合你？',
+    hint:'朋友对你的评价',
+    opts:[
+      {t:'说话有条理，表达清晰',dim:'linguistic'},
+      {t:'方向感好，能记住复杂路线',dim:'spatial'},
+      {t:'对声音敏感，能分辨音准',dim:'musical'},
+      {t:'善于观察自然，认识很多动植物',dim:'naturalistic'}
+    ]
+  },
+  {
+    text:'如果可以选择一个超能力，你会选？',
+    hint:'最吸引你的那个',
+    opts:[
+      {t:'瞬间理解任何复杂系统',dim:'logical-mathematical'},
+      {t:'和任何人都能建立深度连接',dim:'interpersonal'},
+      {t:'用意念创造任何视觉作品',dim:'spatial'},
+      {t:'感知并治愈他人的情绪',dim:'intrapersonal'}
+    ]
+  }
+];
+
+// 维度映射（统一名称）
+var dimMap={
+  'logic':'logical-mathematical',
+  'logical-mathematical':'logical-mathematical',
+  'spatial':'spatial',
+  'interpersonal':'interpersonal',
+  'intrapersonal':'intrapersonal',
+  'linguistic':'linguistic',
+  'musical':'musical',
+  'bodily-kinesthetic':'bodily-kinesthetic',
+  'naturalistic':'naturalistic'
+};
+
+// 维度信息
+var dimInfo={
+  'logical-mathematical':{name:'数理逻辑',color:'#c4956a',emoji:'🧮'},
+  'spatial':{name:'空间视觉',color:'#7a9ab8',emoji:'🎨'},
+  'linguistic':{name:'语言智能',color:'#8a7a6a',emoji:'🗣️'},
+  'musical':{name:'音乐节奏',color:'#9a7ab8',emoji:'🎵'},
+  'bodily-kinesthetic':{name:'身体动觉',color:'#6a9a7a',emoji:'🏃'},
+  'interpersonal':{name:'人际社交',color:'#b87a7a',emoji:'🤝'},
+  'intrapersonal':{name:'自我内省',color:'#7a8a9a',emoji:'🧘'},
+  'naturalistic':{name:'自然观察',color:'#7a9a6a',emoji:'🌿'}
+};
+
+// 职业映射
+var careers={
+  'logical-mathematical':{
+    jobs:['数据分析师','软件工程师','金融分析师','科研工作者','精算师','算法工程师'],
+    desc:'你擅长抽象思维和逻辑推演，适合需要分析、建模、优化的工作。数字和系统是你的舒适区。',
+    profile:['善于发现规律和模式','喜欢用数据说话','享受解决复杂问题的过程','对因果关系敏感'],
+    advice:['多参与需要建模和预测的项目','学习Python或R等分析工具','培养将复杂问题简化的能力','注意与感性型同事的配合']
+  },
+  'spatial':{
+    jobs:['建筑设计师','UI/UX设计师','摄影师','工程师','室内设计师','游戏美术'],
+    desc:'你拥有出色的空间想象力和视觉表达能力，适合需要创造和呈现视觉作品的工作。',
+    profile:['能在脑中旋转三维物体','对色彩、比例敏感','擅长用图像表达想法','方向感通常很好'],
+    advice:['多练习手绘或3D建模','关注设计趋势和美学理论','培养将抽象概念可视化的能力','建立个人作品集']
+  },
+  'linguistic':{
+    jobs:['内容创作者','律师','翻译','教师','编辑','公关专员'],
+    desc:'你对语言有天然的敏感度，擅长用文字和言语影响他人，适合需要表达和沟通的工作。',
+    profile:['词汇量丰富，表达精准','喜欢阅读和写作','擅长讲故事和说服','对语言细节敏感'],
+    advice:['坚持写作，建立个人品牌','学习演讲和辩论技巧','尝试不同文体和风格','关注语言背后的文化差异']
+  },
+  'musical':{
+    jobs:['音乐制作人','声音设计师','音乐治疗师','音频工程师','DJ','乐器教师'],
+    desc:'你对声音、节奏、旋律有敏锐的感知，适合与音乐、声音相关的工作。',
+    profile:['能分辨音高和节奏的细微差别','经常不自觉地哼歌或打节拍','对声音环境敏感','有强烈的节奏感'],
+    advice:['学习一门乐器或音乐制作软件','关注声音设计和音频技术','尝试将音乐与其他领域结合','保护听力，这是你的核心资产']
+  },
+  'bodily-kinesthetic':{
+    jobs:['外科医生','运动员/教练','舞蹈演员','手工艺人','物理治疗师','厨师'],
+    desc:'你擅长通过身体来学习和表达，手眼协调和动作记忆是你的优势，适合需要动手操作的工作。',
+    profile:['动手能力强，喜欢实操','通过做比通过看学得更快','身体协调性好','对触觉和动作敏感'],
+    advice:['选择有实操机会的工作','保持规律运动，维持身体状态','学习精细动作技能','注意工作中的安全和 ergonomics']
+  },
+  'interpersonal':{
+    jobs:['人力资源','销售经理','心理咨询师','教师','团队领导','客户关系'],
+    desc:'你善于理解他人、建立连接，适合需要与人打交道、协调关系的工作。',
+    profile:['能快速感知他人情绪','善于调解冲突','喜欢团队合作','有同理心和包容力'],
+    advice:['培养主动倾听的习惯','学习非暴力沟通技巧','建立广泛的人际网络','注意边界感，避免过度消耗']
+  },
+  'intrapersonal':{
+    jobs:['战略顾问','作家','哲学家','创业者','研究员','个人成长教练'],
+    desc:'你对自己有深刻的认知，擅长独立思考和深度反思，适合需要自主判断和长期专注的工作。',
+    profile:['有清晰的自我认知','喜欢独立工作','善于设定和坚持目标','对内心感受敏感'],
+    advice:['选择有自主空间的工作','定期做复盘和规划','培养将内省转化为行动的能力','找到能深度投入的领域']
+  },
+  'naturalistic':{
+    jobs:['生态学家','园艺师','兽医','环境工程师','农业专家','自然摄影师'],
+    desc:'你对自然世界有敏锐的观察力，擅长识别和分类，适合与动植物、环境相关的工作。',
+    profile:['能注意到环境中的细微变化','喜欢户外活动','对动植物有浓厚兴趣','擅长观察和记录'],
+    advice:['多接触自然环境','学习生态学和分类学知识','培养长期观察的习惯','关注环境保护和可持续发展']
+  }
+};
+
+// 组合职业（当两个维度得分接近时）
+var comboCareers={
+  'logical-mathematical+spatial':['数据可视化专家','量化交易员','建筑信息模型(BIM)工程师'],
+  'logical-mathematical+linguistic':['技术写作者','科技记者','产品经理'],
+  'spatial+musical':['舞台设计师','多媒体艺术家','游戏音效设计师'],
+  'interpersonal+linguistic':['培训师','主持人','外交官'],
+  'intrapersonal+logical-mathematical':['独立研究员','量化分析师','策略游戏设计师'],
+  'bodily-kinesthetic+spatial':['外科医生','雕塑家','工业设计师'],
+  'naturalistic+logical-mathematical':['生物信息学家','环境数据科学家','农业技术专家']
+};
+
+var cur=0,scores={},sel=null;
+
+function initScores(){
+  scores={};
+  for(var k in dimInfo) scores[k]=0;
+}
+
+function render(){
+  var q=Q[cur];
+  sel=ans[q.text]!==undefined?ans[q.text]:null;
+  var html='<div class="q-wrap active">';
+  html+='<div class="q-text">'+q.text+'</div>';
+  if(q.hint) html+='<div class="q-hint">💡 '+q.hint+'</div>';
+  html+='<div class="options">';
+  for(var i=0;i<q.opts.length;i++){
+    var o=q.opts[i];
+    var cls='opt-btn'+(sel===i?' selected':'');
+    var letters=['A','B','C','D'];
+    html+='<button class="'+cls+'" onclick="pick('+i+')">';
+    html+='<span class="opt-letter">'+letters[i]+'</span>';
+    html+='<span>'+o.t+'</span>';
+    html+='</button>';
+  }
+  html+='</div></div>';
+  document.getElementById('qContainer').innerHTML=html;
+  document.getElementById('qBar').style.width=((cur+1)/Q.length*100)+'%';
+  document.getElementById('qNum').textContent=(cur+1)+'/'+Q.length;
+  var last=cur===Q.length-1;
+  var backBtn=cur>0?'<button class="btn btn-back" onclick="prev()">← 上一题</button>':'';
+  var nextBtn=last
+    ?'<button class="btn btn-finish" id="nb" onclick="done()" '+(sel===null?'disabled':'')+'>✦ 查看结果 ✦</button>'
+    :'<button class="btn btn-go" id="nb" onclick="next()" '+(sel===null?'disabled':'')+'>下一题 →</button>';
+  document.getElementById('btnRow').innerHTML=backBtn+nextBtn;
+}
+
+var ans={};
+
+function pick(i){
+  sel=i;
+  ans[Q[cur].text]=i;
+  var btns=document.querySelectorAll('.opt-btn');
+  for(var j=0;j<btns.length;j++) btns[j].classList.toggle('selected',j===i);
+  document.getElementById('nb').disabled=false;
+}
+
+function next(){
+  if(sel===null) return;
+  var q=Q[cur];
+  var dim=dimMap[q.opts[sel].dim];
+  scores[dim]=(scores[dim]||0)+1;
+  cur++;
+  render();
+  document.getElementById('qCard').scrollIntoView({behavior:'smooth'});
+}
+
+function prev(){
+  cur--;
+  render();
+  document.getElementById('qCard').scrollIntoView({behavior:'smooth'});
+}
+
+function done(){
+  if(sel===null) return;
+  var q=Q[cur];
+  var dim=dimMap[q.opts[sel].dim];
+  scores[dim]=(scores[dim]||0)+1;
+
+  // 排序
+  var sorted=[];
+  for(var k in scores) sorted.push({key:k,score:scores[k]});
+  sorted.sort(function(a,b){return b.score-a.score});
+
+  var primary=sorted[0];
+  var secondary=sorted[1];
+  var primaryInfo=careers[primary.key];
+  var pDim=dimInfo[primary.key];
+
+  // 显示结果
+  document.getElementById('qCard').querySelector('#startPage').style.display='none';
+  document.getElementById('quizPage').style.display='none';
+  var r=document.getElementById('rCard');
+  r.classList.add('show');
+
+  document.getElementById('rEmoji').textContent=pDim.emoji;
+  document.getElementById('rTitle').textContent='你的核心天赋：'+pDim.name;
+  document.getElementById('rSub').textContent='得分 '+primary.score+' 分（满分 '+Q.length+' 分）';
+
+  // 雷达图
+  drawRadar(sorted);
+
+  // 维度条
+  var dimHtml='';
+  for(var i=0;i<sorted.length;i++){
+    var d=sorted[i];
+    var info=dimInfo[d.key];
+    var pct=(d.score/Q.length*100);
+    dimHtml+='<div class="dim-item">';
+    dimHtml+='<div class="dim-name">'+info.name+'</div>';
+    dimHtml+='<div class="dim-bar"><div style="width:'+pct+'%;background:'+info.color+'"></div></div>';
+    dimHtml+='<div class="dim-score">'+d.score+'</div>';
+    dimHtml+='</div>';
+  }
+  document.getElementById('dimList').innerHTML=dimHtml;
+
+  // 核心天赋
+  document.getElementById('rTalent').textContent=primaryInfo.desc;
+
+  // 职业
+  var jobs=primaryInfo.jobs.slice();
+  // 检查是否有组合职业
+  if(secondary && secondary.score>=primary.score-1){
+    var comboKey1=primary.key+'+'+secondary.key;
+    var comboKey2=secondary.key+'+'+primary.key;
+    var combo=comboCareers[comboKey1]||comboCareers[comboKey2];
+    if(combo){
+      jobs=combo.concat(jobs);
+      document.getElementById('rJobsDesc').innerHTML='<p style="margin-top:8px"><strong>组合天赋：</strong>你的'+dimInfo[secondary.key].name+'也很突出，适合需要'+pDim.name+'+'+dimInfo[secondary.key].name+'结合的岗位。</p>';
+    } else {
+      document.getElementById('rJobsDesc').innerHTML='<p style="margin-top:8px">次要天赋：'+dimInfo[secondary.key].name+'（'+secondary.score+'分），可在职业选择中作为补充方向。</p>';
+    }
+  } else {
+    document.getElementById('rJobsDesc').innerHTML='';
+  }
+  document.getElementById('rJobs').innerHTML=jobs.slice(0,6).map(function(j){return'<span class="job-tag">'+j+'</span>'}).join('');
+
+  // 能力画像
+  document.getElementById('rProfile').innerHTML=primaryInfo.profile.map(function(p){return'<li>'+p+'</li>'}).join('');
+
+  // 发展建议
+  document.getElementById('rAdvice').innerHTML=primaryInfo.advice.map(function(a){return'<li>'+a+'</li>'}).join('');
+
+  r.scrollIntoView({behavior:'smooth'});
+}
+
+function drawRadar(sorted){
+  var canvas=document.getElementById('radar');
+  var ctx=canvas.getContext('2d');
+  var W=canvas.width,H=canvas.height;
+  var cx=W/2,cy=H/2-10;
+  var r=Math.min(W,H)/2-50;
+  var dims=sorted.map(function(d){return d.key});
+  var n=dims.length;
+
+  ctx.clearRect(0,0,W,H);
+
+  // 网格
+  for(var i=1;i<=4;i++){
+    ctx.beginPath();
+    for(var j=0;j<n;j++){
+      var angle=j*Math.PI*2/n-Math.PI/2;
+      var rr=r*i/4;
+      var x=cx+Math.cos(angle)*rr;
+      var y=cy+Math.sin(angle)*rr;
+      if(j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle='rgba(0,0,0,0.06)';
+    ctx.stroke();
+  }
+
+  // 轴线
+  for(var j=0;j<n;j++){
+    var angle=j*Math.PI*2/n-Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
+    ctx.strokeStyle='rgba(0,0,0,0.08)';
+    ctx.stroke();
+
+    // 标签
+    var labelAngle=angle;
+    var lx=cx+Math.cos(labelAngle)*(r+22);
+    var ly=cy+Math.sin(labelAngle)*(r+22);
+    ctx.font='11px sans-serif';
+    ctx.fillStyle='#6a6058';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(dimInfo[dims[j]].name,lx,ly);
+  }
+
+  // 数据
+  ctx.beginPath();
+  var maxScore=Q.length;
+  for(var j=0;j<n;j++){
+    var d=sorted[j];
+    var angle=j*Math.PI*2/n-Math.PI/2;
+    var rr=r*(d.score/maxScore);
+    var x=cx+Math.cos(angle)*rr;
+    var y=cy+Math.sin(angle)*rr;
+    if(j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle='rgba(196,149,106,0.15)';
+  ctx.fill();
+  ctx.strokeStyle='#c4956a';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // 点
+  for(var j=0;j<n;j++){
+    var d=sorted[j];
+    var angle=j*Math.PI*2/n-Math.PI/2;
+    var rr=r*(d.score/maxScore);
+    var x=cx+Math.cos(angle)*rr;
+    var y=cy+Math.sin(angle)*rr;
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='#c4956a';
+    ctx.fill();
+  }
+}
+
+function restart(){
+  cur=0;ans={};sel=null;initScores();
+  document.getElementById('rCard').classList.remove('show');
+  document.getElementById('startPage').style.display='';
+  document.getElementById('quizPage').style.display='none';
+  document.getElementById('qCard').scrollIntoView({behavior:'smooth'});
+}
+
+// 绑定开始按钮
+document.getElementById('startBtn').addEventListener('click',function(){
+  initScores();
+  document.getElementById('startPage').style.display='none';
+  document.getElementById('quizPage').style.display='';
+  render();
+});
+
+initScores();
+</script>
+</body>
+</html>
